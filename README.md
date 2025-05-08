@@ -28,26 +28,26 @@ Perfect for building scalable web applications with ready-to-use authentication,
 ## 📦 Installation
 
 1- **Clone the repo**  
-    git clone https://github.com/AhtashamYousaf/laravel-react-roles-permissions.git  
-    cd laravel-react-roles-permissions  
+- git clone https://github.com/AhtashamYousaf/laravel-react-roles-permissions.git
+- cd laravel-react-roles-permissions  
     
 2- **Install backend dependencies**  
-    composer install  
-    cp .env.example .env  
-    php artisan key:generate  
+- composer install
+- cp .env.example .env
+- php artisan key:generate  
 
 3- **Install frontend dependencies**  
-    npm install && npm run dev  
+- npm install && npm run dev  
    
 4- **Set up database**  
-    Create a new database  
-    Update .env with your DB credentials  
+- Create a new database
+- Update .env with your DB credentials  
     
 5- **Run Migrations**  
-    php artisan migrate  
+- php artisan migrate  
     
 6- **Seed default roles/permissions**  
-    php artisan db:seed  
+- php artisan db:seed  
     
 7- **Serve the application**  
-    php artisan serve  
+- php artisan serve  
