@@ -27,10 +27,10 @@ Perfect for building scalable web applications with ready-to-use authentication,
 
 ## 📦 Installation
 
-1. **Clone the repo**
+1- **Clone the repo**
     git clone https://github.com/AhtashamYousaf/laravel-react-roles-permissions.git
     cd laravel-react-roles-permissions
-   
+    
 2- **Install backend dependencies**
     composer install
     cp .env.example .env
