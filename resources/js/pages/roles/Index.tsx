@@ -32,6 +32,10 @@ type Props = {
             active: boolean;
         }[];
     };
+    permissions: {
+        id: number;
+        name: string;
+    }[];
     mustVerifyEmail: boolean;
     status?: string;
     search?: string;
@@ -42,6 +46,7 @@ export default function Index(props: Props) {
     const [openDialog, setOpenDialog] = useState<'create' | 'edit' | 'view' | 'delete' | null>(null);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [newRoleName, setNewRoleName] = useState('');
+    const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
 
     const openModal = (type: 'edit' | 'view' | 'delete', role: Role) => {
         setSelectedRole(role);
@@ -62,6 +67,12 @@ export default function Index(props: Props) {
         if (confirm('Are you sure you want to delete this role?')) {
             router.delete(`/roles/${id}`);
         }
+    };
+
+    const togglePermission = (id: number) => {
+        setSelectedPermissions((prev) =>
+            prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
+        );
     };
 
     return (
@@ -156,11 +167,15 @@ export default function Index(props: Props) {
                                             e.preventDefault();
                                             router.post(
                                                 '/roles',
-                                                { name: newRoleName },
+                                                { 
+                                                    name: newRoleName,
+                                                    permissions: selectedPermissions,
+                                                },
                                                 {
                                                     onSuccess: () => {
                                                         closeModal();
                                                         setNewRoleName('');
+                                                        setSelectedPermissions([]);
                                                     },
                                                 },
                                             );
@@ -180,6 +195,22 @@ export default function Index(props: Props) {
                                                 autoComplete="off"
                                             />
                                         </div>
+                                        <div>
+                                            <Label className="mb-2 block">Assign Permissions</Label>
+                                            <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border p-2 rounded">
+                                                {props.permissions.map((perm) => (
+                                                    <label key={perm.id} className="flex items-center gap-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedPermissions.includes(perm.id)}
+                                                            onChange={() => togglePermission(perm.id)}
+                                                        />
+                                                        {perm.name}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+
                                         <DialogFooter>
                                             <Button type="submit">Create Role</Button>
                                         </DialogFooter>
