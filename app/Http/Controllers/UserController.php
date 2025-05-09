@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use App\Models\User;
 use Inertia\Inertia;
+use Spatie\Permission\Models\Role;
 
-class RoleController extends Controller
+class UserController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -15,16 +15,14 @@ class RoleController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
-
-        $roles = Role::with('permissions')->when($search, function ($query, $search) {
+        $users = User::with('roles')->when($search, function ($query, $search) {
             $query->where('name', 'like', "%{$search}%");
         })->paginate(10)->withQueryString();
+       
         
-        $permissions = Permission::all();
-
-        return Inertia::render('roles/Index', [
-            'roles' => $roles,
-            'permissions' => $permissions,
+        return Inertia::render('users/index', [
+            'users' => $users,
+            'roles' => Role::all(),
             'mustVerifyEmail' => false,
             'status' => session('status'),
             'search' => $search,
@@ -45,16 +43,20 @@ class RoleController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8',
         ]);
-    
-        $role = Role::create([
+
+        $user = User::create([
             'name' => $request->input('name'),
-            'guard_name' => 'web', // or 'api' depending on your app
+            'email' => $request->input('email'),
+            'password' => bcrypt($request->input('password')),
         ]);
-        $role->syncPermissions($request->permissions);
-    
-        return redirect()->back()->with('status', 'Role created successfully.');
+
+        $user->assignRole($request->input('role'));
+
+        return redirect()->back()->with('status', 'User created successfully.');
     }
 
     /**
@@ -78,16 +80,7 @@ class RoleController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-    
-        $role = Role::findOrFail($id);
-        $role->name = $request->input('name');
-        $role->save();
-        $role->syncPermissions($request->permissions);
-    
-        return redirect()->back()->with('status', 'Role updated successfully.');
+        dd($request->all());
     }
 
     /**
@@ -95,9 +88,6 @@ class RoleController extends Controller
      */
     public function destroy(string $id)
     {
-        $role = Role::findOrFail($id);
-        $role->delete();
-    
-        return redirect()->back()->with('status', 'Role deleted successfully.');
+        
     }
 }
