@@ -80,14 +80,46 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        dd($request->all());
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8',
+            'role' => 'required|string'
+        ]);
+
+        $user->name = $request->input('name');
+        $user->email = $request->input('email');
+
+        if ($request->filled('password')) {
+            $user->password = bcrypt($request->input('password'));
+        }
+
+        $user->save();
+
+        $user->syncRoles([$request->input('role')]);
+
+        return redirect()->back()->with('status', 'User updated successfully.');
     }
+
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
+        $user = User::findOrFail($id);
+        $user->syncRoles([]); 
+        $user->syncPermissions([]);    
         
+        // Optional: prevent deletion of important users like super admins
+        if ($user->hasRole('super-admin')) {
+            return redirect()->back()->with('error', 'Cannot delete this user.');
+        }
+        
+        $user->delete();
+
+        return redirect()->back()->with('status', 'User deleted successfully.');
     }
 }

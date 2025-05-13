@@ -1,84 +1,101 @@
-// users/components/UserFormDialog.tsx
-import { useForm } from '@inertiajs/react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import InputError from '@/components/input-error';
+import { Button } from '@/components/ui/button';
+import { DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React from 'react';
 
-export default function UserFormDialog({ type, user, roles, onClose }: any) {
-    const isCreate = type === 'create';
-    const isEdit = type === 'edit';
-    const isDelete = type === 'delete';
-
-    const { data, setData, post, put, delete: destroy, processing, errors } = useForm({
-        name: user?.name ?? '',
-        email: user?.email ?? '',
-        password: '',
-        role: user?.roles?.[0]?.name ?? '',
-    });
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (isCreate) {
-            post('/users', { onSuccess: onClose });
-        } else if (isEdit) {
-            put(`/users/${user.id}`, { onSuccess: onClose });
-        } else if (isDelete) {
-            destroy(`/users/${user.id}`, { onSuccess: onClose });
-        }
+interface Props {
+    data: {
+        name: string;
+        email: string;
+        password: string;
+        role: string;
     };
+    roles: { id: number; name: string }[];
+    errors: any;
+    processing?: boolean;
+    onChange: (field: keyof Props['data'], value: string) => void;
+    onSubmit: (e: React.FormEvent) => void;
+    submitLabel: string;
+}
 
+export default function UserForm({ data, roles, errors, processing, onChange, onSubmit, submitLabel }: Props) {
     return (
-        <Dialog open={!!type} onOpenChange={onClose}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>
-                        {isCreate && 'Create User'}
-                        {isEdit && 'Edit User'}
-                        {isDelete && 'Delete User'}
-                    </DialogTitle>
-                </DialogHeader>
+        <form onSubmit={onSubmit} className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                    Name
+                </Label>
+                <Input
+                    id="name"
+                    value={data.name}
+                    onChange={(e) => onChange('name', e.target.value)}
+                    className="col-span-3"
+                    required
+                    autoComplete="off"
+                />
+                <InputError className="col-span-4 mt-1 text-right" message={errors.name} />
+            </div>
 
-                {!isDelete ? (
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label>Name</label>
-                            <input value={data.name} onChange={(e) => setData('name', e.target.value)} required />
-                            <div className="text-red-500">{errors.name}</div>
-                        </div>
-                        <div>
-                            <label>Email</label>
-                            <input value={data.email} onChange={(e) => setData('email', e.target.value)} type="email" required />
-                            <div className="text-red-500">{errors.email}</div>
-                        </div>
-                        <div>
-                            <label>Password</label>
-                            <input value={data.password} onChange={(e) => setData('password', e.target.value)} type="password" />
-                            <div className="text-red-500">{errors.password}</div>
-                        </div>
-                        <div>
-                            <label>Role</label>
-                            <select value={data.role} onChange={(e) => setData('role', e.target.value)} required>
-                                <option value="">Select role</option>
-                                {roles.map((r: any) => (
-                                    <option key={r.id} value={r.name}>{r.name}</option>
-                                ))}
-                            </select>
-                            <div className="text-red-500">{errors.role}</div>
-                        </div>
-                        <DialogFooter>
-                            <button type="submit" disabled={processing}>
-                                {isCreate ? 'Create' : 'Save Changes'}
-                            </button>
-                        </DialogFooter>
-                    </form>
-                ) : (
-                    <div>
-                        <p>Are you sure you want to delete <strong>{user.name}</strong>?</p>
-                        <DialogFooter>
-                            <button onClick={handleSubmit} className="text-red-600" disabled={processing}>Yes, Delete</button>
-                            <button onClick={onClose}>Cancel</button>
-                        </DialogFooter>
-                    </div>
-                )}
-            </DialogContent>
-        </Dialog>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                    Email
+                </Label>
+                <Input
+                    type="email"
+                    id="email"
+                    value={data.email}
+                    onChange={(e) => onChange('email', e.target.value)}
+                    className="col-span-3"
+                    required
+                    autoComplete="off"
+                />
+                <InputError className="col-span-4 mt-1 text-right" message={errors.email} />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="password" className="text-right">
+                    Password
+                </Label>
+                <Input
+                    type="password"
+                    id="password"
+                    value={data.password}
+                    onChange={(e) => onChange('password', e.target.value)}
+                    className="col-span-3"
+                    autoComplete="off"
+                    placeholder={submitLabel.toLowerCase().includes('save') ? "Leave blank if you don't want to change the password" : ''}
+                    required={!submitLabel.toLowerCase().includes('save')}
+                />
+                <InputError className="col-span-4 mt-1 text-right" message={errors.password} />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="role" className="text-right">
+                    Role
+                </Label>
+                <Select value={data.role} onValueChange={(value: any) => onChange('role', value)}>
+                    <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {roles.map((role) => (
+                            <SelectItem key={role.id} value={role.name}>
+                                {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <InputError className="col-span-4 mt-1 text-right" message={errors.role} />
+            </div>
+
+            <DialogFooter>
+                <Button type="submit" disabled={processing}>
+                    {processing ? 'Processing...' : submitLabel}
+                </Button>
+            </DialogFooter>
+        </form>
     );
 }
