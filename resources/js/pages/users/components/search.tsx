@@ -1,6 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-export default function UserSearch({ search, onSearchChange, onSubmit }: any) {
+
+interface UserSearchProps {
+    search: string;
+    onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+}
+export default function UserSearch({ search, onSearchChange, onSubmit }: UserSearchProps) {
     return (
         <form onSubmit={onSubmit} className="flex gap-2">
             <Input

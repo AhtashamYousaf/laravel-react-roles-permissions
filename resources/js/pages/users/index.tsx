@@ -58,7 +58,7 @@ export default function Index({ users, roles, search: initialSearch }: Props) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null); // Success message state
 
-  const { data, setData, post, processing, errors, reset } = useForm<{
+  const { data, setData, processing, errors, reset } = useForm<{
     name: string;
     email: string;
     password: string;
@@ -139,7 +139,7 @@ export default function Index({ users, roles, search: initialSearch }: Props) {
 
             <UserSearch
               search={search}
-              onSearchChange={(e: any) => setSearch(e.target.value)}
+              onSearchChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
               onSubmit={handleSearch}
             />
 
@@ -151,8 +151,8 @@ export default function Index({ users, roles, search: initialSearch }: Props) {
 
             <UserTable
               users={users}
-              onEdit={(user: any) => openModal('edit', user)}
-              onDelete={(user: any) => openModal('delete', user)}
+              onEdit={(user: User) => openModal('edit', user)}
+              onDelete={(user: User) => openModal('delete', user)}
             />
 
             <Dialog open={!!openDialog} onOpenChange={closeModal}>
