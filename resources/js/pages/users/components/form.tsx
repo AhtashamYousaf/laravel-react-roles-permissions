@@ -14,7 +14,12 @@ interface Props {
         role: string;
     };
     roles: { id: number; name: string }[];
-    errors: any;
+    errors: {
+        name?: string;
+        email?: string;
+        password?: string;
+        role?: string;
+    };
     processing?: boolean;
     onChange: (field: keyof Props['data'], value: string) => void;
     onSubmit: (e: React.FormEvent) => void;
@@ -76,7 +81,7 @@ export default function UserForm({ data, roles, errors, processing, onChange, on
                 <Label htmlFor="role" className="text-right">
                     Role
                 </Label>
-                <Select value={data.role} onValueChange={(value: any) => onChange('role', value)}>
+                <Select value={data.role} onValueChange={(value: string) => onChange('role', value)}>
                     <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select a role" />
                     </SelectTrigger>

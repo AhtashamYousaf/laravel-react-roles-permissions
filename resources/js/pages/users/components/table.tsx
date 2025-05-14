@@ -2,7 +2,35 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { router } from '@inertiajs/react';
 import { Pencil, Trash2 } from 'lucide-react';
-export default function UserTable({ users, onEdit, onDelete }: any) {
+
+type Role = {
+  id: number;
+  name: string;
+};
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  email_verified_at: string | null;
+  roles: Role[];
+  created_at: Date;
+};
+interface Props {
+    users: {
+    data: User[];
+    current_page: number;
+    last_page: number;
+    total: number;
+    links: {
+      url: string | null;
+      label: string;
+      active: boolean;
+    }[];
+  },
+    onEdit: (user: User) => void;
+    onDelete: (user: User) => void;
+}
+export default function UserTable({ users, onEdit, onDelete }: Props) {
     return (
         <>
             <div className="bg-background overflow-x-auto rounded-lg border">
@@ -20,13 +48,13 @@ export default function UserTable({ users, onEdit, onDelete }: any) {
                     </TableHeader>
                     <TableBody>
                         {users.data.length > 0 ? (
-                            users.data.map((user: any, index: number) => (
+                            users.data.map((user: User, index: number) => (
                                 <TableRow key={user.id}>
                                     <TableCell className="font-medium">{index + 1 + (users.current_page - 1) * 10}</TableCell>
                                     <TableCell>{user.name}</TableCell>
                                     <TableCell className="text-center">{user.email}</TableCell>
                                     <TableCell className="text-center">
-                                        {user.roles.map((role: any) => role.name.charAt(0).toUpperCase() + role.name.slice(1))}
+                                        {user.roles.map((role: Role) => role.name.charAt(0).toUpperCase() + role.name.slice(1))}
                                     </TableCell>
                                     <TableCell className="text-center">
                                         {new Date(user.created_at).toLocaleDateString('en-GB', {
@@ -57,7 +85,7 @@ export default function UserTable({ users, onEdit, onDelete }: any) {
                 </Table>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-                {users.links.map((link: any, idx: number) => (
+                {users.links.map((link: { url: string | null; label: string; active: boolean }, idx: number) => (
                     <Button
                         key={idx}
                         variant={link.active ? 'default' : 'outline'}
