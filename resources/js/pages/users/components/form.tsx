@@ -11,14 +11,14 @@ interface Props {
         name: string;
         email: string;
         password: string;
-        role: string;
+        roleId: number | string;
     };
     roles: { id: number; name: string }[];
     errors: {
         name?: string;
         email?: string;
         password?: string;
-        role?: string;
+        roleId?: string;
     };
     processing?: boolean;
     onChange: (field: keyof Props['data'], value: string) => void;
@@ -41,7 +41,7 @@ export default function UserForm({ data, roles, errors, processing, onChange, on
                     required
                     autoComplete="off"
                 />
-                <InputError className="col-span-4 mt-1 text-right" message={errors.name} />
+                <InputError className="col-span-4 mt-1 text-center" message={errors.name} />
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
@@ -57,7 +57,7 @@ export default function UserForm({ data, roles, errors, processing, onChange, on
                     required
                     autoComplete="off"
                 />
-                <InputError className="col-span-4 mt-1 text-right" message={errors.email} />
+                <InputError className="col-span-4 mt-1 text-center" message={errors.email} />
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
@@ -74,26 +74,26 @@ export default function UserForm({ data, roles, errors, processing, onChange, on
                     placeholder={submitLabel.toLowerCase().includes('save') ? "Leave blank if you don't want to change the password" : ''}
                     required={!submitLabel.toLowerCase().includes('save')}
                 />
-                <InputError className="col-span-4 mt-1 text-right" message={errors.password} />
+                <InputError className="col-span-4 mt-1 text-center" message={errors.password} />
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="role" className="text-right">
+                <Label htmlFor="roleId" className="text-right">
                     Role
                 </Label>
-                <Select value={data.role} onValueChange={(value: string) => onChange('role', value)}>
+                <Select value={String(data.roleId)} onValueChange={(value) => onChange('roleId', value)}>
                     <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent>
                         {roles.map((role) => (
-                            <SelectItem key={role.id} value={role.name}>
+                            <SelectItem key={role.id} value={String(role.id)}>
                                 {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
                             </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
-                <InputError className="col-span-4 mt-1 text-right" message={errors.role} />
+                <InputError className="col-span-4 mt-1 text-center" message={errors.roleId} />
             </div>
 
             <DialogFooter>
