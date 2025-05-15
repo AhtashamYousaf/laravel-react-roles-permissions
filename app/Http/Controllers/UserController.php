@@ -6,6 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Validation\Rules;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Redirect;
 
 class UserController extends Controller
 {
@@ -40,23 +45,27 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8',
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+            'password' => ['required', Rules\Password::defaults()],
+            'roleId' => 'required|numeric',
         ]);
 
         $user = User::create([
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-            'password' => bcrypt($request->input('password')),
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
         ]);
 
-        $user->assignRole($request->input('role'));
+        event(new Registered($user));
 
-        return redirect()->back()->with('status', 'User created successfully.');
+        $role = Role::findById($request->input('roleId'), 'web');
+        $user->syncRoles([$role->name]);
+
+        return to_route('admin.users.index')->with('success', 'User created!');
     }
 
     /**
@@ -78,29 +87,32 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): RedirectResponse
     {
         $user = User::findOrFail($id);
-
+        
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8',
-            'role' => 'required|string'
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|lowercase|email|max:255|unique:users,email,' . $id,
+        'password' => ['nullable', Rules\Password::defaults()],
+        'roleId' => 'required|numeric',
         ]);
 
-        $user->name = $request->input('name');
-        $user->email = $request->input('email');
+        $user->fill([
+            'name' => $request->input('name'),
+            'email' => $request->input('email'),
+        ]);
 
-        if ($request->filled('password')) {
-            $user->password = bcrypt($request->input('password'));
+        if (!empty($request->input('password'))) {
+            $user->password = Hash::make($request->input('password'));
         }
 
         $user->save();
 
-        $user->syncRoles([$request->input('role')]);
+        $role = Role::findById($request->input('roleId'), 'web');
+        $user->syncRoles([$role->name]);
 
-        return redirect()->back()->with('status', 'User updated successfully.');
+       return to_route('admin.users.index')->with('success', 'User updated successfully!');
     }
 
 
@@ -110,15 +122,16 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         $user = User::findOrFail($id);
-        $user->syncRoles([]); 
-        $user->syncPermissions([]);    
-        
-        // Optional: prevent deletion of important users like super admins
+
         if ($user->hasRole('super-admin')) {
-            return redirect()->back()->with('error', 'Cannot delete this user.');
+            return back(303)->withErrors(['delete' => 'Cannot delete this user.']);
         }
+
+        $user->syncRoles(); 
+        $user->syncPermissions();    
         
         $user->delete();
+        
 
         return redirect()->back()->with('status', 'User deleted successfully.');
     }
