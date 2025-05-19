@@ -2,12 +2,14 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { router } from '@inertiajs/react';
 import { Pencil, Trash2, Eye } from 'lucide-react';
+import CommonFunctions from '@/pages/helpers/common';
 
 type Role = {
   id: number;
   name: string;
   created_at: Date;
   updated_at: Date;
+  permissions: { id: number; name: string }[];
 };
 
 interface Props {
@@ -27,6 +29,7 @@ interface Props {
     onDelete: (role: Role) => void;
 }
 export default function RoleTable({ roles, onView, onEdit, onDelete }: Props) {
+    const { hasPermission } = CommonFunctions();
     return (
         <>
             <div className="bg-background overflow-x-auto rounded-lg border">
@@ -66,12 +69,16 @@ export default function RoleTable({ roles, onView, onEdit, onDelete }: Props) {
                                         <Button size="icon" variant="ghost" onClick={() => onView(role)}>
                                             <Eye className="h-4 w-4" />
                                         </Button>
-                                        <Button size="icon" variant="ghost" onClick={() => onEdit(role)}>
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button size="icon" variant="ghost" onClick={() => onDelete(role)}>
-                                            <Trash2 className="text-destructive h-4 w-4" />
-                                        </Button>
+                                        {hasPermission('role_update') && (
+                                            <Button size="icon" variant="ghost" onClick={() => onEdit(role)}>
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                        {hasPermission('role_delete') && (
+                                            <Button size="icon" variant="ghost" onClick={() => onDelete(role)}>
+                                                <Trash2 className="text-destructive h-4 w-4" />
+                                            </Button>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))

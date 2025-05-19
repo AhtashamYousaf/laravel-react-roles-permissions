@@ -4,6 +4,7 @@ import type { Config } from 'ziggy-js';
 export interface Auth {
     user: User;
     role: string[];
+    permissions: string[];
 }
 
 export interface BreadcrumbItem {

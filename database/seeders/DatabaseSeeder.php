@@ -17,9 +17,43 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        $user = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@gmail.com',
+        $permissions = [
+            'user_create',
+            'user_view',
+            'user_update',
+            'user_delete',
+            'role_create',
+            'role_view',
+            'role_update',
+            'role_delete',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+
+        // Create roles
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin']);
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        $userRole = Role::firstOrCreate(['name' => 'user']);
+
+        $superAdminRole->syncPermissions(Permission::all());
+
+        $adminRole->syncPermissions([
+            'user_create',
+            'user_view',
+            'user_update',
+            'user_delete',
+        ]);
+
+        // User role can have no permissions or only view permissions
+        $userRole->syncPermissions(['user_view']);
+
+        // Create users
+        $superAdmin = User::factory()->create([
+            'name' => 'Super Admin',
+            'email' => 'superadmin@gmail.com',
+            'password' => bcrypt('superadmin'),
         ]);
 
         $admin = User::factory()->create([
@@ -28,10 +62,15 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('admin'),
         ]);
 
-        $adminRole = Role::create(['name' => 'admin']);
-        $userRole = Role::create(['name' => 'user']);
+        $user = User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@gmail.com',
+            'password' => bcrypt('user'),
+        ]);
 
-        $user->assignRole($userRole);
+        // Assign roles
+        $superAdmin->assignRole($superAdminRole);
         $admin->assignRole($adminRole);
+        $user->assignRole($userRole);
     }
 }

@@ -1,14 +1,16 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Toaster } from '@/components/ui/sonner';
 import AppLayout from '@/layouts/app-layout';
+import CommonFunctions from '@/pages/helpers/common';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
-import { Eye, Pencil, Trash2 } from 'lucide-react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import RoleForm from './components/form';
+import RoleSearch from './components/search';
+import RoleTable from './components/table';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -18,6 +20,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 type Role = {
     id: number;
     name: string;
+    created_at: Date;
+    updated_at: Date;
+    permissions: { id: number; name: string }[];
 };
 
 type Props = {
@@ -32,47 +37,102 @@ type Props = {
             active: boolean;
         }[];
     };
-    permissions: {
-        id: number;
-        name: string;
-    }[];
+    permissions: { id: number; name: string }[];
     mustVerifyEmail: boolean;
     status?: string;
     search?: string;
 };
 
-export default function Index(props: Props) {
-    const [search, setSearch] = useState(props.search ?? '');
+export default function Index({ roles, permissions, search: initialSearch }: Props) {
+    const [search, setSearch] = useState(initialSearch ?? '');
     const [openDialog, setOpenDialog] = useState<'create' | 'edit' | 'view' | 'delete' | null>(null);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-    const [newRoleName, setNewRoleName] = useState('');
-    const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
+    const { hasPermission } = CommonFunctions();
 
-    const openModal = (type: 'edit' | 'view' | 'delete', role: Role) => {
+    const {
+        data,
+        setData,
+        post,
+        put,
+        delete: destroy,
+        processing,
+        errors,
+        reset,
+    } = useForm<{
+        name: string;
+        permissions: number[];
+    }>({
+        name: '',
+        permissions: [],
+    });
+
+    const isCreating = openDialog === 'create';
+    const isEditing = openDialog === 'edit';
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (search.trim() !== initialSearch?.trim()) {
+            router.get('/roles', { search: search.trim() }, { preserveScroll: true });
+        }
+    };
+
+    const togglePermission = (id: number) => {
+        setData('permissions', data.permissions.includes(id) ? data.permissions.filter((pid) => pid !== id) : [...data.permissions, id]);
+    };
+
+    const openModal = (type: 'create' | 'edit' | 'view' | 'delete', role: Role | null = null) => {
         setSelectedRole(role);
+
+        if (type === 'edit' && role) {
+            setData({
+                name: role.name,
+                permissions: role.permissions?.map((p) => p.id) ?? [],
+            });
+        } else if (type === 'create') {
+            reset();
+        }
+
         setOpenDialog(type);
     };
 
     const closeModal = () => {
         setOpenDialog(null);
         setSelectedRole(null);
+        reset();
     };
 
-    const handleSearch = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        router.get('/roles', { search }, { preserveScroll: true });
+
+        const method = isEditing ? put : post;
+        const url = isEditing ? `/roles/${selectedRole?.id}` : '/roles';
+
+        method(url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(`Role ${isEditing ? 'updated' : 'created'} successfully`);
+                closeModal();
+            },
+            onError: () => {
+                toast.error(`Failed to ${isEditing ? 'update' : 'create'} role`);
+            },
+        });
     };
 
-    const handleDelete = (id: number) => {
-        if (confirm('Are you sure you want to delete this role?')) {
-            router.delete(`/roles/${id}`);
-        }
-    };
+    const handleDelete = () => {
+        if (!selectedRole) return;
 
-    const togglePermission = (id: number) => {
-        setSelectedPermissions((prev) =>
-            prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
-        );
+        destroy(`/roles/${selectedRole.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success('Role deleted successfully');
+                closeModal();
+            },
+            onError: (Errors) => {
+                toast.error(Errors?.delete || 'Failed to delete role');
+                closeModal();
+            },
+        });
     };
 
     return (
@@ -85,199 +145,131 @@ export default function Index(props: Props) {
                     </div>
 
                     <div className="relative z-10 space-y-6">
-                        <form onSubmit={handleSearch} className="flex items-center gap-2">
-                            <Input placeholder="Search roles..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
-                            <Button type="submit">Search</Button>
-                        </form>
-                        <div className="flex justify-end">
-                            <Button onClick={() => setOpenDialog('create')}>Add New Role</Button>
-                        </div>
-                        <div className="bg-background overflow-x-auto rounded-lg border">
-                            <Table>
-                                <TableCaption>A list of all user roles.</TableCaption>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[80px]">#</TableHead>
-                                        <TableHead>Role Name</TableHead>
-                                        <TableHead className="text-center">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {props.roles.data.length > 0 ? (
-                                        props.roles.data.map((role, index) => (
-                                            <TableRow key={role.id}>
-                                                <TableCell className="font-medium">{index + 1 + (props.roles.current_page - 1) * 10}</TableCell>
-                                                <TableCell>{role.name}</TableCell>
-                                                <TableCell className="space-x-2 text-center">
-                                                    <Button size="icon" variant="ghost" onClick={() => openModal('view', role)}>
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button size="icon" variant="ghost" onClick={() => openModal('edit', role)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button size="icon" variant="ghost" onClick={() => openModal('delete', role)}>
-                                                        <Trash2 className="text-destructive h-4 w-4" />
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="text-muted-foreground py-4 text-center">
-                                                No roles found.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
+                        <Toaster position="top-right" />
 
-                        <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-                            {props.roles.links.map((link, idx) => (
-                                <Button
-                                    key={idx}
-                                    variant={link.active ? 'default' : 'outline'}
-                                    onClick={() => link.url && router.get(link.url)}
-                                    disabled={!link.url}
-                                    size="sm"
-                                    dangerouslySetInnerHTML={{ __html: link.label }}
-                                />
-                            ))}
-                        </div>
+                        <RoleSearch search={search} onSearchChange={(e) => setSearch(e.target.value)} onSubmit={handleSearch} />
 
-                        <Dialog open={!!openDialog} onOpenChange={closeModal}>
-                            <DialogContent className="sm:max-w-[425px]">
-                                <DialogHeader>
-                                    <DialogTitle>
-                                        {openDialog === 'create' && 'Create Role'}
-                                        {openDialog === 'view' && 'View Role'}
-                                        {openDialog === 'edit' && 'Edit Role'}
-                                        {openDialog === 'delete' && 'Delete Role'}
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        {openDialog === 'create' && 'Add a new role.'}
-                                        {openDialog === 'view' && 'Here is the role detail.'}
-                                        {openDialog === 'edit' && 'Make changes to the role and save.'}
-                                        {openDialog === 'delete' && 'Are you sure you want to delete this role?'}
-                                    </DialogDescription>
-                                </DialogHeader>
-                                {openDialog === 'create' && (
-                                    <form
-                                        onSubmit={(e) => {
-                                            e.preventDefault();
-                                            router.post(
-                                                '/roles',
-                                                { 
-                                                    name: newRoleName,
-                                                    permissions: selectedPermissions,
-                                                },
-                                                {
-                                                    onSuccess: () => {
-                                                        closeModal();
-                                                        setNewRoleName('');
-                                                        setSelectedPermissions([]);
-                                                    },
-                                                },
-                                            );
-                                        }}
-                                        className="grid gap-4 py-4"
-                                    >
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="newRoleName" className="text-right">
-                                                Name
-                                            </Label>
-                                            <Input
-                                                id="newRoleName"
-                                                value={newRoleName}
-                                                onChange={(e) => setNewRoleName(e.target.value)}
-                                                className="col-span-3"
-                                                required
-                                                autoComplete="off"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label className="mb-2 block">Assign Permissions</Label>
-                                            <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border p-2 rounded">
-                                                {props.permissions.map((perm) => (
-                                                    <label key={perm.id} className="flex items-center gap-2">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedPermissions.includes(perm.id)}
-                                                            onChange={() => togglePermission(perm.id)}
-                                                        />
-                                                        {perm.name}
-                                                    </label>
-                                                ))}
+                        {hasPermission('role_create') && (
+                            <div className="flex justify-end">
+                                <Button onClick={() => openModal('create')}>Add New Role</Button>
+                            </div>
+                        )}
+
+                        <RoleTable
+                            roles={roles}
+                            onView={(role) => openModal('view', role)}
+                            onEdit={(role) => openModal('edit', role)}
+                            onDelete={(role) => openModal('delete', role)}
+                        />
+
+                        {openDialog && (
+                            <Dialog open={!!openDialog} onOpenChange={closeModal}>
+                                <DialogContent className="sm:max-w-[500px]">
+                                    {/* View Dialog */}
+                                    {openDialog === 'view' && selectedRole && (
+                                        <>
+                                            <DialogHeader>
+                                                <DialogTitle>View Role</DialogTitle>
+                                                <DialogDescription>Role details below:</DialogDescription>
+                                            </DialogHeader>
+
+                                            <div className="space-y-4">
+                                                <p>
+                                                    <strong>ID:</strong> {selectedRole.id}
+                                                </p>
+                                                <p>
+                                                    <strong>Name:</strong> {selectedRole.name}
+                                                </p>
+
+                                                <div>
+                                                    <strong>Permissions:</strong>
+                                                    {selectedRole.permissions?.length ? (
+                                                        <div className="mt-2 space-y-4 rounded border bg-gray-50 p-3">
+                                                            {Object.entries(
+                                                                selectedRole.permissions.reduce(
+                                                                    (acc: Record<string, typeof selectedRole.permissions>, perm) => {
+                                                                        const [group] = perm.name.split('_');
+                                                                        if (!acc[group]) acc[group] = [];
+                                                                        acc[group].push(perm);
+                                                                        return acc;
+                                                                    },
+                                                                    {},
+                                                                ),
+                                                            ).map(([group, perms]) => (
+                                                                <div key={group}>
+                                                                    <div className="mb-1 font-semibold text-gray-700 capitalize">
+                                                                        {group.replaceAll('_', ' ')}
+                                                                    </div>
+                                                                    <div className="ml-3 flex flex-wrap gap-2">
+                                                                        {perms.map((p) => (
+                                                                            <span
+                                                                                key={p.id}
+                                                                                className="rounded-full bg-blue-100 px-2 py-1 text-sm text-blue-800"
+                                                                            >
+                                                                                {p.name.replace(`${group}_`, '').replaceAll('_', ' ')}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="mt-2 text-gray-500">No permissions assigned.</p>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
+                                        </>
+                                    )}
 
-                                        <DialogFooter>
-                                            <Button type="submit">Create Role</Button>
-                                        </DialogFooter>
-                                    </form>
-                                )}
+                                    {/* Create or Edit Dialog */}
+                                    {(isCreating || isEditing) && (
+                                        <>
+                                            <DialogHeader>
+                                                <DialogTitle>{isCreating ? 'Create Role' : 'Edit Role'}</DialogTitle>
+                                                <DialogDescription>{isCreating ? 'Add a new role.' : 'Update role details.'}</DialogDescription>
+                                            </DialogHeader>
 
-                                {openDialog === 'view' && (
-                                    <div className="space-y-2">
-                                        <p>
-                                            <strong>ID:</strong> {selectedRole?.id}
-                                        </p>
-                                        <p>
-                                            <strong>Name:</strong> {selectedRole?.name}
-                                        </p>
-                                        <p>
-                                            <strong>Permissions:</strong>
-                                        </p>
-                                    </div>
-                                )}
-
-                                {openDialog === 'edit' && selectedRole && (
-                                    <form
-                                        onSubmit={(e) => {
-                                            e.preventDefault();
-                                            // Send update via Inertia
-                                            router.put(`/roles/${selectedRole.id}`, { name: selectedRole.name });
-                                            closeModal();
-                                        }}
-                                        className="grid gap-4 py-4"
-                                    >
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="name" className="text-right">
-                                                Name
-                                            </Label>
-                                            <Input
-                                                id="name"
-                                                value={selectedRole.name}
-                                                onChange={(e) => setSelectedRole({ ...selectedRole, name: e.target.value })}
-                                                className="col-span-3"
-                                                required
-                                                autoComplete="name"
+                                            <RoleForm
+                                                type={openDialog}
+                                                data={data}
+                                                permissions={permissions}
+                                                errors={errors}
+                                                processing={processing}
+                                                togglePermission={togglePermission}
+                                                onChange={(key, value) => setData(key, value)}
+                                                onSubmit={handleSubmit}
+                                                onClose={closeModal}
                                             />
-                                        </div>
-                                        <DialogFooter>
-                                            <Button type="submit">Save changes</Button>
-                                        </DialogFooter>
-                                    </form>
-                                )}
+                                        </>
+                                    )}
 
-                                {openDialog === 'delete' && selectedRole && (
-                                    <DialogFooter>
-                                        <Button
-                                            variant="destructive"
-                                            onClick={() => {
-                                                handleDelete(selectedRole.id);
-                                                closeModal();
-                                            }}
-                                        >
-                                            Yes, Delete
-                                        </Button>
-                                        <Button variant="outline" onClick={closeModal}>
-                                            Cancel
-                                        </Button>
-                                    </DialogFooter>
-                                )}
-                            </DialogContent>
-                        </Dialog>
+                                    {/* Delete Dialog */}
+                                    {openDialog === 'delete' && selectedRole && (
+                                        <>
+                                            <DialogHeader>
+                                                <DialogTitle>Delete Role</DialogTitle>
+                                                <DialogDescription>
+                                                    Are you sure you want to delete the role <strong>{selectedRole.name}</strong>?
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <DialogFooter>
+                                                <Button
+                                                    variant="destructive"
+                                                    onClick={() => {
+                                                        handleDelete();
+                                                    }}
+                                                >
+                                                    Yes, Delete
+                                                </Button>
+                                                <Button variant="outline" onClick={closeModal}>
+                                                    Cancel
+                                                </Button>
+                                            </DialogFooter>
+                                        </>
+                                    )}
+                                </DialogContent>
+                            </Dialog>
+                        )}
                     </div>
                 </div>
             </div>
