@@ -44,6 +44,7 @@ type Props = {
     mustVerifyEmail: boolean;
     status?: string;
     search?: string;
+    role?: string;
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -53,10 +54,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 type DialogType = 'create' | 'edit' | 'delete' | null;
 
-export default function Index({ users, roles, search: initialSearch }: Props) {
+export default function Index({ users, roles, search: initialSearch, role: initialRole }: Props) {
     const [search, setSearch] = useState(initialSearch ?? '');
     const [openDialog, setOpenDialog] = useState<DialogType>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [roleId, setRoleId] = useState(initialRole ?? '');
     const defaultFormData = {
         name: '',
         email: '',
@@ -87,7 +89,7 @@ export default function Index({ users, roles, search: initialSearch }: Props) {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         if (search.trim() !== initialSearch?.trim()) {
-            get(route('admin.users.index', { search: search.trim() }));
+            get(route('admin.users.index', { search: search.trim(), role: roleId || undefined }));
         }
     };
 
@@ -126,8 +128,8 @@ export default function Index({ users, roles, search: initialSearch }: Props) {
                 toast.success(`User ${isEditing ? 'updated' : 'created'} successfully`);
                 closeModal();
             },
-            onError: () => {
-                toast.error(`Failed to ${isEditing ? 'update' : 'create'} user`);
+            onError: (Errors) => {
+                toast.error(Errors?.update || Errors?.create || `Failed to ${isEditing ? 'update' : 'create'} user`);
             },
         });
     };
@@ -160,7 +162,10 @@ export default function Index({ users, roles, search: initialSearch }: Props) {
                         <Toaster position="top-right" />
                         <UserSearch
                             search={search}
-                            onSearchChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                            roleId={roleId}
+                            roles={roles}
+                            onSearchChange={(e) => setSearch(e.target.value)}
+                            onRoleChange={(value: string) => setRoleId(value)}
                             onSubmit={handleSearch}
                         />
 
@@ -173,7 +178,7 @@ export default function Index({ users, roles, search: initialSearch }: Props) {
                             onEdit={(user: User) => openModal('edit', user)}
                             onDelete={(user: User) => openModal('delete', user)}
                         />
-   
+
                         {openDialog && (
                             <Dialog open={!!openDialog} onOpenChange={closeModal}>
                                 <DialogContent className="sm:max-w-[425px]">
@@ -197,7 +202,9 @@ export default function Index({ users, roles, search: initialSearch }: Props) {
                                         <>
                                             <DialogHeader>
                                                 <DialogTitle>Delete User</DialogTitle>
-                                                <DialogDescription>Are you sure you want to delete this user?</DialogDescription>
+                                                <DialogDescription>
+                                                    Are you sure you want to delete this user "{selectedUser?.name}" ?
+                                                </DialogDescription>
                                             </DialogHeader>
                                             <DialogFooter>
                                                 <Button variant="destructive" onClick={handleDelete}>

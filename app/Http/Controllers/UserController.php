@@ -19,10 +19,23 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        if (!auth()->user()->hasAnyRole(['super-admin', 'admin'])) {
+             return back(403)->withErrors(['list' => 'Unauthorized access']);
+        }
+
         $search = $request->get('search');
+        $roleId = $request->input('role');
+        
         $users = User::with('roles')->when($search, function ($query, $search) {
             $query->where('name', 'like', "%{$search}%");
-        })->paginate(10)->withQueryString();
+        })->when(auth()->user()->hasRole('admin'), function ($query) {
+            $query->whereDoesntHave('roles', function ($q) {
+                $q->where('name', 'super-admin');
+            });
+        })->when($roleId, fn ($query) =>
+            $query->whereHas('roles', fn ($q) => $q->where('id', $roleId))
+        )
+        ->paginate(10)->withQueryString();
        
         
         return Inertia::render('users/index', [
@@ -31,6 +44,7 @@ class UserController extends Controller
             'mustVerifyEmail' => false,
             'status' => session('status'),
             'search' => $search,
+            'role' => $roleId
         ]);
     }
 
@@ -107,6 +121,15 @@ class UserController extends Controller
             $user->password = Hash::make($request->input('password'));
         }
 
+        
+        $newRole = Role::findById($request->input('roleId'), 'web');
+        if ($user->id === auth()->id() && !$user->hasRole('super-admin')) {
+            return back(303)->withErrors(['update' => 'You cannot change your own role.']);
+        } 
+        if (($newRole->name === 'admin' || $newRole->name === 'super-admin') && !auth()->user()->hasRole('super-admin')) {
+            return back(303)->withErrors(['update' => 'Only superadmin can assign the admin role.']);
+        }
+
         $user->save();
 
         $role = Role::findById($request->input('roleId'), 'web');
@@ -122,7 +145,9 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         $user = User::findOrFail($id);
-
+        if ($user->id == auth()->id()) {
+            return back(303)->withErrors(['delete' => 'You cannot delete your own account.']);
+        }
         if ($user->hasRole('super-admin')) {
             return back(303)->withErrors(['delete' => 'Cannot delete this user.']);
         }
