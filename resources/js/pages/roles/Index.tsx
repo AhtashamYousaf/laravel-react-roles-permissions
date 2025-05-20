@@ -184,7 +184,7 @@ export default function Index({ roles, permissions, search: initialSearch }: Pro
                                                 <div>
                                                     <strong>Permissions:</strong>
                                                     {selectedRole.permissions?.length ? (
-                                                        <div className="mt-2 space-y-4 rounded border bg-gray-50 p-3">
+                                                        <div className="mt-2 space-y-4 rounded border p-3">
                                                             {Object.entries(
                                                                 selectedRole.permissions.reduce(
                                                                     (acc: Record<string, typeof selectedRole.permissions>, perm) => {
@@ -197,14 +197,14 @@ export default function Index({ roles, permissions, search: initialSearch }: Pro
                                                                 ),
                                                             ).map(([group, perms]) => (
                                                                 <div key={group}>
-                                                                    <div className="mb-1 font-semibold text-gray-700 capitalize">
+                                                                    <div className="mb-1 font-semibold capitalize ">
                                                                         {group.replaceAll('_', ' ')}
                                                                     </div>
                                                                     <div className="ml-3 flex flex-wrap gap-2">
                                                                         {perms.map((p) => (
                                                                             <span
                                                                                 key={p.id}
-                                                                                className="rounded-full bg-blue-100 px-2 py-1 text-sm text-blue-800"
+                                                                                className="rounded-full px-2 py-1 text-sm border-2"
                                                                             >
                                                                                 {p.name.replace(`${group}_`, '').replaceAll('_', ' ')}
                                                                             </span>

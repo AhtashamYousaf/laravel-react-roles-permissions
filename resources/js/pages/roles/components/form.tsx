@@ -86,7 +86,7 @@ export default function RoleForm({
       {/* Permissions */}
       <div>
         <Label className="mb-2 block">Assign Permissions</Label>
-        <div className="space-y-4 max-h-72 overflow-y-auto border rounded p-3 bg-gray-50">
+        <div className="space-y-4 max-h-72 overflow-y-auto border rounded p-3">
           {Object.entries(groupedPermissions).map(([group, perms]) => (
             <div key={group}>
               <div className="flex items-center gap-2 font-semibold capitalize mb-2">
