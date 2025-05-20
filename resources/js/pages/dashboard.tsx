@@ -2,7 +2,7 @@ import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
+import {  TrendingUpIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -27,7 +27,7 @@ interface Props {
     mustVerifyEmail: boolean;
 }
 
-export default function Dashboard({ users, status, mustVerifyEmail }: Props) {
+export default function Dashboard({ users }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
