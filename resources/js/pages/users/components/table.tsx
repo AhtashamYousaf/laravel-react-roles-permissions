@@ -54,8 +54,11 @@ export default function UserTable({ users, onEdit, onDelete }: Props) {
                                     <TableCell>{user.name}</TableCell>
                                     <TableCell className="text-center">{user.email}</TableCell>
                                     <TableCell className="text-center">
-                                        {user.roles.map((role: Role) => role.name.charAt(0).toUpperCase() + role.name.slice(1))}
+                                        {user.roles
+                                        .map((role: Role) => role.name.charAt(0).toUpperCase() + role.name.slice(1))
+                                        .join(', ')}
                                     </TableCell>
+
                                     <TableCell className="text-center">
                                         {new Date(user.created_at).toLocaleDateString('en-GB', {
                                             day: 'numeric',

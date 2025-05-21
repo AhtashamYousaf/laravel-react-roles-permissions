@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import React from 'react';
 
 interface Props {
@@ -11,18 +10,18 @@ interface Props {
         name: string;
         email: string;
         password: string;
-        roleId: number | string;
+        roleIds: number[];
     };
     roles: { id: number; name: string }[];
     errors: {
         name?: string;
         email?: string;
         password?: string;
-        roleId?: string;
+        roleIds?: string;
     };
     processing?: boolean;
-    onChange: (field: keyof Props['data'], value: string) => void;
-    onSubmit: (e: React.FormEvent) => void;
+    onChange: (field: 'name' | 'email' | 'password' | 'roleIds', value: string  | number[]) => void;
+    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
     submitLabel: string;
 }
 
@@ -77,24 +76,30 @@ export default function UserForm({ data, roles, errors, processing, onChange, on
                 <InputError className="col-span-4 mt-1 text-center" message={errors.password} />
             </div>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="roleId" className="text-right">
-                    Role
-                </Label>
-                <Select value={String(data.roleId)} onValueChange={(value) => onChange('roleId', value)}>
-                    <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {roles.map((role) => (
-                            <SelectItem key={role.id} value={String(role.id)}>
-                                {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <InputError className="col-span-4 mt-1 text-center" message={errors.roleId} />
+           <div className="grid grid-cols-4 items-start gap-4">
+                <Label className="text-right pt-2">Roles</Label>
+                <div className="col-span-3 grid gap-2">
+                    {roles.map((role) => (
+                        <div key={role.id} className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                value={role.id}
+                                checked={data.roleIds.includes(role.id)}
+                                onChange={(e) => {
+                                    const updatedRoleIds = e.target.checked
+                                        ? [...data.roleIds, role.id]
+                                        : data.roleIds.filter((id) => id !== role.id);
+
+                                    onChange('roleIds', updatedRoleIds); 
+                                }}
+                            />
+                            {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+                        </div>
+                    ))}
+                </div>
+                <InputError className="col-span-4 mt-1 text-center" message={errors.roleIds} />
             </div>
+
 
             <DialogFooter>
                 <Button type="submit" disabled={processing}>

@@ -109,9 +109,10 @@ class UserController extends Controller
         'name' => 'required|string|max:255',
         'email' => 'required|string|lowercase|email|max:255|unique:users,email,' . $id,
         'password' => ['nullable', Rules\Password::defaults()],
-        'roleId' => 'required|numeric',
+        'roleIds' => 'required|array',
+        'roleIds.*' => 'integer|exists:roles,id'
         ]);
-
+        
         $user->fill([
             'name' => $request->input('name'),
             'email' => $request->input('email'),
@@ -122,18 +123,23 @@ class UserController extends Controller
         }
 
         
-        $newRole = Role::findById($request->input('roleId'), 'web');
+        $roleIds = $request->input('roleIds');
+
+        // Fetch roles by IDs
+        $roles = Role::whereIn('id', $roleIds)->where('guard_name', 'web')->get();
         if ($user->id === auth()->id() && !$user->hasRole('super-admin')) {
             return back(303)->withErrors(['update' => 'You cannot change your own role.']);
-        } 
-        if (($newRole->name === 'admin' || $newRole->name === 'super-admin') && !auth()->user()->hasRole('super-admin')) {
-            return back(303)->withErrors(['update' => 'Only superadmin can assign the admin role.']);
+        }
+
+        foreach ($roles as $role) {
+            if (in_array($role->name, ['admin', 'super-admin']) && !auth()->user()->hasRole('super-admin')) {
+                return back(303)->withErrors(['update' => 'Only superadmin can assign the admin or super-admin role.']);
+            }
         }
 
         $user->save();
-
-        $role = Role::findById($request->input('roleId'), 'web');
-        $user->syncRoles([$role->name]);
+        // Sync roles
+        $user->syncRoles($roles->pluck('name')->toArray());
 
        return to_route('admin.users.index')->with('success', 'User updated successfully!');
     }
