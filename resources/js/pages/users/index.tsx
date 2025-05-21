@@ -63,7 +63,7 @@ export default function Index({ users, roles, search: initialSearch, role: initi
         name: '',
         email: '',
         password: '',
-        roleId: '',
+        roleIds: [] as number[],
     };
 
     const {
@@ -76,12 +76,7 @@ export default function Index({ users, roles, search: initialSearch, role: initi
         processing,
         errors,
         reset,
-    } = useForm<{
-        name: string;
-        email: string;
-        password: string;
-        roleId: number | string;
-    }>(defaultFormData);
+    } = useForm({...defaultFormData});
 
     const isCreating = openDialog === 'create';
     const isEditing = openDialog === 'edit';
@@ -102,7 +97,7 @@ export default function Index({ users, roles, search: initialSearch, role: initi
                       ...defaultFormData,
                       name: user.name,
                       email: user.email,
-                      roleId: user.roles[0]?.id || '',
+                      roleIds: user.roles.map(role => role.id),
                   }
                 : defaultFormData,
         );
