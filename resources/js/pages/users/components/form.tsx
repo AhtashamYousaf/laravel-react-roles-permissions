@@ -76,26 +76,25 @@ export default function UserForm({ data, roles, errors, processing, onChange, on
                 <InputError className="col-span-4 mt-1 text-center" message={errors.password} />
             </div>
 
-           <div className="grid grid-cols-4 items-start gap-4">
+            <div className="grid grid-cols-4 items-start gap-4">
                 <Label className="text-right pt-2">Roles</Label>
-                <div className="col-span-3 grid gap-2">
-                    {roles.map((role) => (
-                        <div key={role.id} className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                value={role.id}
-                                checked={data.roleIds.includes(role.id)}
-                                onChange={(e) => {
-                                    const updatedRoleIds = e.target.checked
-                                        ? [...data.roleIds, role.id]
-                                        : data.roleIds.filter((id) => id !== role.id);
-
-                                    onChange('roleIds', updatedRoleIds); 
-                                }}
-                            />
-                            {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
-                        </div>
-                    ))}
+                <div className="col-span-3 flex flex-wrap gap-4">
+                {roles.map((role) => (
+                    <div key={role.id} className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        value={role.id}
+                        checked={data.roleIds.includes(role.id)}
+                        onChange={(e) => {
+                        const updatedRoleIds = e.target.checked
+                            ? [...data.roleIds, role.id]
+                            : data.roleIds.filter((id) => id !== role.id);
+                        onChange('roleIds', updatedRoleIds); 
+                        }}
+                    />
+                    <span className="capitalize">{role.name}</span>
+                    </div>
+                ))}
                 </div>
                 <InputError className="col-span-4 mt-1 text-center" message={errors.roleIds} />
             </div>

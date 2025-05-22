@@ -65,7 +65,8 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', Rules\Password::defaults()],
-            'roleId' => 'required|numeric',
+            'roleIds' => 'required|array',
+            'roleIds.*' => 'integer|exists:roles,id'
         ]);
 
         $user = User::create([
@@ -76,8 +77,21 @@ class UserController extends Controller
 
         event(new Registered($user));
 
-        $role = Role::findById($request->input('roleId'), 'web');
-        $user->syncRoles([$role->name]);
+        $roleIds = $request->input('roleIds');
+
+        // Fetch roles by IDs
+        $roles = Role::whereIn('id', $roleIds)->where('guard_name', 'web')->get();
+        if ($user->id === auth()->id() && !$user->hasRole('super-admin')) {
+            return back(303)->withErrors(['update' => 'You cannot change your own role.']);
+        }
+
+        foreach ($roles as $role) {
+            if (in_array($role->name, ['admin', 'super-admin']) && !auth()->user()->hasRole('super-admin')) {
+                return back(303)->withErrors(['update' => 'Only superadmin can assign the admin or super-admin role.']);
+            }
+        }
+        // Sync roles
+        $user->syncRoles($roles->pluck('name')->toArray());
 
         return to_route('admin.users.index')->with('success', 'User created!');
     }
