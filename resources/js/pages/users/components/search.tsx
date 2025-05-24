@@ -25,6 +25,7 @@ export default function UserSearch({ search, roleId, roles, onSearchChange, onRo
                     <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
                     {roles.map((role) => (
                         <SelectItem key={role.id} value={String(role.id)}>
                             {role.name.charAt(0).toUpperCase() + role.name.slice(1)}

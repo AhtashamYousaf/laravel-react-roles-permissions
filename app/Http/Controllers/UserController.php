@@ -20,24 +20,29 @@ class UserController extends Controller
     public function index(Request $request)
     {
         if (!auth()->user()->hasAnyRole(['super-admin', 'admin'])) {
-             return back(403)->withErrors(['list' => 'Unauthorized access']);
+            return back(403)->withErrors(['list' => 'Unauthorized access']);
         }
-
+    
         $search = $request->get('search');
         $roleId = $request->input('role');
-        
-        $users = User::with('roles')->when($search, function ($query, $search) {
-            $query->where('name', 'like', "%{$search}%");
-        })->when(auth()->user()->hasRole('admin'), function ($query) {
-            $query->whereDoesntHave('roles', function ($q) {
-                $q->where('name', 'super-admin');
-            });
-        })->when($roleId, fn ($query) =>
-            $query->whereHas('roles', fn ($q) => $q->where('id', $roleId))
-        )
-        ->paginate(10)->withQueryString();
-       
-        
+    
+        $users = User::with('roles')
+            ->when($search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->when(auth()->user()->hasRole('admin'), function ($query) {
+                $query->whereDoesntHave('roles', function ($q) {
+                    $q->where('name', 'super-admin');
+                });
+            })
+            ->when($roleId && $roleId !== 'all', function ($query) use ($roleId) {
+                $query->whereHas('roles', function ($q) use ($roleId) {
+                    $q->where('id', $roleId);
+                });
+            })
+            ->paginate(10)
+            ->withQueryString();
+    
         return Inertia::render('users/index', [
             'users' => $users,
             'roles' => Role::all(),
@@ -47,6 +52,7 @@ class UserController extends Controller
             'role' => $roleId
         ]);
     }
+    
 
     /**
      * Show the form for creating a new resource.
