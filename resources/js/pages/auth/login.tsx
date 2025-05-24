@@ -38,92 +38,92 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         <>
             <Head title="Log in" />
 
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-                <div className="w-full max-w-md space-y-6 bg-white rounded-2xl shadow-xl p-8">
-                    <div className="text-center">
-                        <h1 className="text-2xl font-bold text-gray-900">Log in to your account</h1>
-                        <p className="mt-1 text-sm text-gray-500">Enter your email and password to continue</p>
-                    </div>
+            <div className="flex h-screen">
+                {/* Left Side - Image */}
+                <div className="hidden w-1/2 lg:flex items-center justify-center">
+                    <img
+                        src="/images/login.png"
+                        alt="Login Illustration"
+                        className="h-full w-full object-cover"
+                    />
+                </div>
 
-                    {status && (
-                        <div className="text-green-600 text-sm text-center font-medium bg-green-50 px-4 py-2 rounded-md border border-green-200">
-                            {status}
+                {/* Right Side - Form */}
+                <div className="flex w-full lg:w-1/2 items-center justify-center p-6">
+                    <div className="w-full max-w-md space-y-6">
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Log in to your account</h1>
+                            <p className="text-muted-foreground">Enter your email and password below to log in</p>
                         </div>
-                    )}
 
-                    <form onSubmit={submit} className="space-y-6">
-                        <div className="space-y-4">
-                            <div>
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="email"
-                                    value={data.email}
-                                    onChange={(e) => setData('email', e.target.value)}
-                                    placeholder="you@example.com"
-                                />
-                                <InputError message={errors.email} />
-                            </div>
-
-                            <div>
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="password">Password</Label>
-                                    {canResetPassword && (
-                                        <TextLink
-                                            href={route('password.request')}
-                                            className="text-sm py-1 text-blue-600 hover:underline"
-                                        >
-                                            Forgot password?
-                                        </TextLink>
-                                    )}
+                        <form className="flex flex-col gap-6" onSubmit={submit}>
+                            <div className="grid gap-6">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="email">Email address</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        required
+                                        autoFocus
+                                        tabIndex={1}
+                                        autoComplete="email"
+                                        value={data.email}
+                                        onChange={(e) => setData('email', e.target.value)}
+                                        placeholder="email@example.com"
+                                    />
+                                    <InputError message={errors.email} />
                                 </div>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    required
-                                    tabIndex={2}
-                                    autoComplete="current-password"
-                                    value={data.password}
-                                    onChange={(e) => setData('password', e.target.value)}
-                                    placeholder="••••••••"
-                                />
-                                <InputError message={errors.password} />
+
+                                <div className="grid gap-2">
+                                    <div className="flex items-center">
+                                        <Label htmlFor="password">Password</Label>
+                                        {canResetPassword && (
+                                            <TextLink href={route('password.request')} className="ml-auto text-sm" tabIndex={5}>
+                                                Forgot password?
+                                            </TextLink>
+                                        )}
+                                    </div>
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        required
+                                        tabIndex={2}
+                                        autoComplete="current-password"
+                                        value={data.password}
+                                        onChange={(e) => setData('password', e.target.value)}
+                                        placeholder="Password"
+                                    />
+                                    <InputError message={errors.password} />
+                                </div>
+
+                                <div className="flex items-center space-x-3">
+                                    <Checkbox
+                                        id="remember"
+                                        name="remember"
+                                        checked={data.remember}
+                                        onClick={() => setData('remember', !data.remember)}
+                                        tabIndex={3}
+                                    />
+                                    <Label htmlFor="remember">Remember me</Label>
+                                </div>
+
+                                <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
+                                    {processing && <LoaderCircle className="h-4 w-4 animate-spin mr-2" />}
+                                    Log in
+                                </Button>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="remember"
-                                    name="remember"
-                                    checked={data.remember}
-                                    onClick={() => setData('remember', !data.remember)}
-                                    tabIndex={3}
-                                />
-                                <Label htmlFor="remember" className="text-sm text-gray-700">
-                                    Remember me
-                                </Label>
+                            <div className="text-muted-foreground text-center text-sm">
+                                Don't have an account?{' '}
+                                <TextLink href={route('register')} tabIndex={5}>
+                                    Sign up
+                                </TextLink>
                             </div>
-                        </div>
 
-                        <Button
-                            type="submit"
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                            tabIndex={4}
-                            disabled={processing}
-                        >
-                            {processing && <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />}
-                            Log in
-                        </Button>
-                    </form>
-
-                    <div className="text-center text-sm text-gray-500">
-                        Don't have an account?{' '}
-                        <TextLink href={route('register')} className="text-blue-600 hover:underline" tabIndex={5}>
-                            Sign up
-                        </TextLink>
+                            {status && (
+                                <div className="text-center text-sm font-medium text-green-600">{status}</div>
+                            )}
+                        </form>
                     </div>
                 </div>
             </div>
