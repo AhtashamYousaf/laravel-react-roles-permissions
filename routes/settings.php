@@ -20,6 +20,6 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('settings/appearance');
     })->name('appearance');
 
-    Route::get('settings', [GeneralSettingController::class, 'index'])->name('settings');
-    Route::post('settings', [GeneralSettingController::class, 'store'])->name('settings.store');
+    Route::get('settings/general', [GeneralSettingController::class, 'index'])->name('settings.general');
+    Route::post('settings/general', [GeneralSettingController::class, 'update'])->name('settings.general.update');
 });

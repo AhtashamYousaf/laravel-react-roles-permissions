@@ -31,6 +31,13 @@ export interface SharedData {
     ziggy: Config & { location: string };
     sidebarOpen: boolean;
     [key: string]: unknown;
+    settings: {
+        app_name: string;
+        site_logo_lite?: string;
+        site_logo_dark?: string;
+        site_icon?: string;
+        site_favicon?: string;
+    }
 }
 
 export interface User {
