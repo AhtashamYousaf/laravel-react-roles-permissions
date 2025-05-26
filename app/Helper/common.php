@@ -1,21 +1,5 @@
 <?php
 
-use Illuminate\Foundation\Vite;
-use Illuminate\Support\Facades\Vite as ViteFacade;
-use App\Services\LanguageService;
-
-function get_module_asset_paths(): array
-{
-    $paths = [];
-    if (file_exists('build/manifest.json')) {
-        $files = json_decode(file_get_contents('build/manifest.json'), true);
-        foreach ($files as $file) {
-            $paths[] = $file['src'];
-        }
-    }
-    return $paths;
-}
-
 function handle_ld_setting(string $method, ...$parameters): mixed
 {
     return app(App\Services\SettingService::class)->{$method}(...$parameters);
@@ -57,7 +41,7 @@ if (!function_exists('storeImageAndGetUrl')) {
                 mkdir($targetPath, 0777, true);
             }
             $uploadedFile->move($targetPath, $fileName);
-            return asset($path . '/' . $fileName);
+            return ('/' . $path . '/' . $fileName);
         }
         return null;
     }
@@ -81,28 +65,5 @@ if (!function_exists('deleteImageFromPublic')) {
 }
 
 
-if (!function_exists('module_vite_compile')) {
-    /**
-     * support for vite hot reload overriding manifest file.
-     */
-    function module_vite_compile(string $module, string $asset, ?string $hotFilePath = null, $manifestFile = '.vite/manifest.json'): Vite
-    {
-        return ViteFacade::useHotFile($hotFilePath ?: storage_path('vite.hot'))
-            ->useBuildDirectory($module)
-            ->useManifestFilename($manifestFile)
-            ->withEntryPoints([$asset]);
-    }
-}
 
 
-if (!function_exists('get_languages')) {
-    /**
-     * Get the list of available languages with their flags.
-     *
-     * @return array
-     */
-    function get_languages(): array
-    {
-        return app(LanguageService::class)->getActiveLanguages();
-    }
-}

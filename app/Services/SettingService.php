@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 namespace App\Services;
-
 use App\Models\Setting;
 
 class SettingService
@@ -12,9 +11,6 @@ class SettingService
 
     public function __construct()
     {
-        $this->excluded_settings = ld_apply_filters('excluded_setting_keys', [
-            '_token',
-        ]);
     }
 
     public function addSetting(string $optionName, mixed $optionValue, bool $autoload = false): ?Setting

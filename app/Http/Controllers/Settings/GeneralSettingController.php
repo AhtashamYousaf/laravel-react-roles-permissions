@@ -18,41 +18,28 @@ class GeneralSettingController extends Controller
 
     public function index()
     {
-        return Inertia::render('settings/general', [
-            'settings' => $this->settingService->getSettings(),
-        ]);
+        return Inertia::render('settings/general');
     }
 
-    // public function store( Request $request)
-    // {
-    //     // Restrict specific fields in demo mode.
-    //     if (env('DEMO_MODE', false)) {
-    //         $restrictedFields = ld_apply_filters('settings_restricted_fields', ['app_name', 'google_analytics_script']);
-    //         $fields = $request->except($restrictedFields);
-    //     } else {
-    //         $fields = $request->all();
-    //     }
+    public function update( Request $request)
+    {
+        $fields = $request->all();
+        // $this->checkAuthorization(auth()->user(), ['settings.edit']);
 
-    //     $this->checkAuthorization(auth()->user(), ['settings.edit']);
+        $uploadPath = 'uploads/settings';
+        foreach ($fields as $fieldName => $fieldValue) {
+            if ($request->hasFile($fieldName)) {
+                deleteImageFromPublic((string) config($fieldName));
+                $fileUrl = storeImageAndGetUrl($request, $fieldName, $uploadPath);
+                $this->settingService->addSetting($fieldName, $fileUrl);
+            } else {
+                $this->settingService->addSetting($fieldName, $fieldValue);
+            }
+        }
 
-    //     $uploadPath = 'uploads/settings';
-
-    //     foreach ($fields as $fieldName => $fieldValue) {
-    //         if ($request->hasFile($fieldName)) {
-    //             deleteImageFromPublic((string) config($fieldName));
-    //             $fileUrl = storeImageAndGetUrl($request, $fieldName, $uploadPath);
-    //             $this->settingService->addSetting($fieldName, $fileUrl);
-    //         } else {
-    //             $this->settingService->addSetting($fieldName, $fieldValue);
-    //         }
-    //     }
-
-    //     $this->envWriter->batchWriteKeysToEnvFile($fields);
-
-    //     $this->storeActionLog(ActionType::UPDATED, [
-    //         'settings' => $fields,
-    //     ]);
-
-    //     return redirect()->back()->with('success', 'Settings saved successfully.');
-    // }
+        // $this->storeActionLog(ActionType::UPDATED, [
+        //     'settings' => $fields,
+        // ]);
+        return to_route('settings.general')->with('success', 'Settings updated successfully!');
+    }
 }

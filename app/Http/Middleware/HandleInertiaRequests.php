@@ -6,6 +6,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
+use App\Models\Setting;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -38,7 +39,14 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
-
+        // Fetch all settings at once to avoid N+1 queries
+       $settings = Setting::whereIn('option_name', [
+            'app_name',
+            'site_logo_lite',
+            'site_logo_dark',
+            'site_icon',
+            'site_favicon',
+        ])->pluck('option_value', 'option_name')->toArray();
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -47,6 +55,13 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'role' => $request->user()?->getRoleNames()->toArray(),
                 'permissions' => $request->user()?->getAllPermissions()?->pluck('name')->toArray() ?? [],
+            ],
+            'settings' => [
+                'app_name' => $settings['app_name'] ?? config('settings.app_name'),
+                'site_logo_lite' => $settings['site_logo_lite'] ?? config('settings.site_logo_lite'),
+                'site_logo_dark' => $settings['site_logo_dark'] ?? config('settings.site_logo_dark'),
+                'site_icon' => $settings['site_icon'] ?? config('settings.name'),
+                'site_favicon' => $settings['site_favicon'] ?? config('settings.site_favicon'),
             ],
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),
