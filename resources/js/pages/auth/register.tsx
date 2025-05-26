@@ -36,16 +36,16 @@ export default function Register() {
 
             <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
                 {/* Image Section */}
-                <div className="hidden md:flex items-center justify-center">
+                <div className="hidden md:flex items-center justify-center h-screen">
                     <img
-                        src="/images/signup.png" // Replace with your own image path
+                        src="/images/signup.png"
                         alt="Register illustration"
-                        className="max-w-full h-auto object-cover"
+                        className="h-full w-full object-cover"
                     />
                 </div>
 
                 {/* Form Section */}
-                <div className="flex items-center justify-center p-6">
+                <div className="flex items-center justify-center p-6 h-screen">
                     <div className="w-full max-w-md space-y-6">
                         <div>
                             <h1 className="text-2xl font-bold">Create an account</h1>

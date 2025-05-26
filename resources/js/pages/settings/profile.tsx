@@ -105,7 +105,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                         )}
 
                         <div className="flex items-center gap-4">
-                            <Button className="bg-blue-600 hover:bg-blue-700" disabled={processing}>Save</Button>
+                            <Button className="" disabled={processing}>Save</Button>
 
                             <Transition
                                 show={recentlySuccessful}
