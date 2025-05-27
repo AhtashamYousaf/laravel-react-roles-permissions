@@ -15,8 +15,6 @@ import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'General settings', href: '/settings/general' }];
 
-const defaultImage = '/images/placeholder.png';
-
 export default function General() {
     const { settings } = usePage<SharedData>().props;
 
@@ -35,10 +33,10 @@ export default function General() {
     });
 
     const [previews, setPreviews] = useState({
-        site_logo_lite: settings.site_logo_lite || defaultImage,
-        site_logo_dark: settings.site_logo_dark || defaultImage,
-        site_icon: settings.site_icon || defaultImage,
-        site_favicon: settings.site_favicon || defaultImage,
+        site_logo_lite: settings.site_logo_lite || '/logo.svg',
+        site_logo_dark: settings.site_logo_dark || '/logo.svg',
+        site_icon: settings.site_icon || '/favicon.ico',
+        site_favicon: settings.site_favicon || '/favicon.svg',
     });
 
     const handleImageChange = (key: keyof typeof previews, file: File | null) => {
