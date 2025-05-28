@@ -6,8 +6,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use App\Models\User;
 
 class UsersSeeder extends Seeder
 {
@@ -18,60 +17,26 @@ class UsersSeeder extends Seeder
      */
     public function run()
     {
-        $permissions = [
-            'user_create',
-            'user_view',
-            'user_update',
-            'user_delete',
-            'role_create',
-            'role_view',
-            'role_update',
-            'role_delete',
-        ];
-
-        foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
-        }
-
-        // Create roles
-        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin']);
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $userRole = Role::firstOrCreate(['name' => 'user']);
-
-        $superAdminRole->syncPermissions(Permission::all());
-
-        $adminRole->syncPermissions([
-            'user_create',
-            'user_view',
-            'user_update',
-            'user_delete',
-        ]);
-
-        // User role can have no permissions or only view permissions
-        $userRole->syncPermissions(['user_view']);
-
         // Create users
         $superAdmin = User::factory()->create([
             'name' => 'Super Admin',
-            'email' => 'superadmin@gmail.com',
+            'email' => 'superadmin@example.com',
             'password' => bcrypt('superadmin'),
         ]);
 
         $admin = User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@gmail.com',
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
             'password' => bcrypt('admin'),
         ]);
 
         $user = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@gmail.com',
+            'name' => 'User',
+            'email' => 'user@example.com',
             'password' => bcrypt('user'),
         ]);
-
-        // Assign roles
-        $superAdmin->assignRole($superAdminRole);
-        $admin->assignRole($adminRole);
-        $user->assignRole($userRole);
+        
+        User::factory()->count(50)->create();
+        $this->command->info('Users table seeded with 52 users!');
     }
 }

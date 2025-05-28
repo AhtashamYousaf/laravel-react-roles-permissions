@@ -12,7 +12,7 @@ import { type SharedData } from '@/types';
 export function AppSidebar() {
     const { auth } = usePage<SharedData>().props;
     const roles = auth.role ?? [];
-    const isAdmin = roles.includes('admin') || roles.includes('super-admin');
+    const isAdmin = roles.includes('Admin') || roles.includes('Superadmin');
     const mainNavItems: NavItem[] = [
         {
             title: 'Dashboard',    

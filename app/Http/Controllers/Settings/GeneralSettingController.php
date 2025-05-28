@@ -11,9 +11,9 @@ use Illuminate\Contracts\Support\Renderable;
 
 class GeneralSettingController extends Controller
 {
-    public function __construct(
-        private readonly SettingService $settingService,
-    ) {
+    public function __construct(private readonly SettingService $settingService,)
+    {
+        
     }
 
     public function index()
@@ -21,10 +21,10 @@ class GeneralSettingController extends Controller
         return Inertia::render('settings/general');
     }
 
-    public function update( Request $request)
+    public function update( Request $request) 
     {
         $fields = $request->all();
-        // $this->checkAuthorization(auth()->user(), ['settings.edit']);
+        $this->checkAuthorization(auth()->user(), ['setting.update']);
 
         $uploadPath = 'uploads/settings';
         foreach ($fields as $fieldName => $fieldValue) {
