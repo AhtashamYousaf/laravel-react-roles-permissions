@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Database\Seeders\SettingsSeeder;
 use Database\Seeders\UsersSeeder;
+use Database\Seeders\RolePermissionSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,7 +16,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call(UsersSeeder::class);
+        $this->call(UsersSeeder::class);
+        $this->call(RolePermissionSeeder::class);
         $this->call(SettingsSeeder::class);
     }
 }

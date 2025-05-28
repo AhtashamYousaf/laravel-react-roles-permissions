@@ -10,6 +10,7 @@ type Role = {
   created_at: Date;
   updated_at: Date;
   permissions: { id: number; name: string }[];
+  user_count: number;
 };
 
 interface Props {
@@ -39,6 +40,7 @@ export default function RoleTable({ roles, onView, onEdit, onDelete }: Props) {
                         <TableRow>
                             <TableHead className="w-[80px]">#</TableHead>
                             <TableHead>Role Name</TableHead>
+                            <TableHead className="text-center">Users</TableHead>
                             <TableHead className="text-center">Created At</TableHead>
                             <TableHead className="text-center">Updated At</TableHead>
                             <TableHead className="text-center">Actions</TableHead>
@@ -49,8 +51,12 @@ export default function RoleTable({ roles, onView, onEdit, onDelete }: Props) {
                             roles.data.map((role: Role, index: number) => (
                                 <TableRow key={role.id}>
                                     <TableCell className="font-medium">{index + 1 + (roles.current_page - 1) * 10}</TableCell>
-                                    <TableCell>{role.name.charAt(0).toUpperCase() + role.name.slice(1)}</TableCell>
-                                   
+                                    <TableCell>{role.name.charAt(0).toUpperCase() + role.name.slice(1)} 
+                                        <span className="block text-xs text-muted-foreground">Total Permissions: {role.permissions.length > 0 ? role.permissions.length : 'No Permissions assigned'}</span>
+                                    </TableCell>
+                                   <TableCell className="text-center">
+                                        {role.user_count > 0 ? role.user_count : 'No users assigned'}
+                                    </TableCell>
                                     <TableCell className="text-center">
                                         {new Date(role.created_at).toLocaleDateString('en-GB', {
                                             day: 'numeric',
@@ -69,12 +75,12 @@ export default function RoleTable({ roles, onView, onEdit, onDelete }: Props) {
                                         <Button size="icon" variant="ghost" onClick={() => onView(role)}>
                                             <Eye className="h-4 w-4" />
                                         </Button>
-                                        {hasPermission('role_update') && (
+                                        {hasPermission('role.update') && (
                                             <Button size="icon" variant="ghost" onClick={() => onEdit(role)}>
                                                 <Pencil className="h-4 w-4" />
                                             </Button>
                                         )}
-                                        {hasPermission('role_delete') && (
+                                        {hasPermission('role.delete') && (
                                             <Button size="icon" variant="ghost" onClick={() => onDelete(role)}>
                                                 <Trash2 className="text-destructive h-4 w-4" />
                                             </Button>

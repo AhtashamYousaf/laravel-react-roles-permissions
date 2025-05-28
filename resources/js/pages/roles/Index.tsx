@@ -23,6 +23,7 @@ type Role = {
     created_at: Date;
     updated_at: Date;
     permissions: { id: number; name: string }[];
+    user_count: number;
 };
 
 type Props = {
@@ -149,7 +150,7 @@ export default function Index({ roles, permissions, search: initialSearch }: Pro
 
                         <RoleSearch search={search} onSearchChange={(e) => setSearch(e.target.value)} onSubmit={handleSearch} />
 
-                        {hasPermission('role_create') && (
+                        {hasPermission('role.create') && (
                             <div className="flex justify-end">
                                 <Button onClick={() => openModal('create')}>Add New Role</Button>
                             </div>
@@ -188,7 +189,7 @@ export default function Index({ roles, permissions, search: initialSearch }: Pro
                                                             {Object.entries(
                                                                 selectedRole.permissions.reduce(
                                                                     (acc: Record<string, typeof selectedRole.permissions>, perm) => {
-                                                                        const [group] = perm.name.split('_');
+                                                                        const [group] = perm.name.split('.');
                                                                         if (!acc[group]) acc[group] = [];
                                                                         acc[group].push(perm);
                                                                         return acc;
@@ -197,18 +198,16 @@ export default function Index({ roles, permissions, search: initialSearch }: Pro
                                                                 ),
                                                             ).map(([group, perms]) => (
                                                                 <div key={group}>
-                                                                    <div className="mb-1 font-semibold capitalize ">
-                                                                        {group.replaceAll('_', ' ')}
-                                                                    </div>
+                                                                    <div className="mb-1 font-semibold capitalize">{group.replaceAll('_', ' ')}</div>
                                                                     <div className="ml-3 flex flex-wrap gap-2">
-                                                                        {perms.map((p) => (
-                                                                            <span
-                                                                                key={p.id}
-                                                                                className="rounded-full px-2 py-1 text-sm border-2"
-                                                                            >
-                                                                                {p.name.replace(`${group}_`, '').replaceAll('_', ' ')}
-                                                                            </span>
-                                                                        ))}
+                                                                        {perms.map((p) => {
+                                                                            const [, action] = p.name.split('.');
+                                                                            return (
+                                                                                <span key={p.id} className="rounded-full border-2 px-2 py-1 text-sm">
+                                                                                    {action?.replaceAll('_', ' ')}
+                                                                                </span>
+                                                                            );
+                                                                        })}
                                                                     </div>
                                                                 </div>
                                                             ))}

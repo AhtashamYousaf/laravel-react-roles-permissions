@@ -6,21 +6,31 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Inertia\Inertia;
+use App\Services\RolesService;
+use App\Services\PermissionService;
 
 class RoleController extends Controller
 {
+    public function __construct(
+        private readonly RolesService $rolesService,
+        private readonly PermissionService $permissionService
+    )
+    {
+        
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $search = $request->get('search');
-
-        $roles = Role::with('permissions')->when($search, function ($query, $search) {
-            $query->where('name', 'like', "%{$search}%");
-        })->paginate(10)->withQueryString();
+        $this->checkAuthorization(auth()->user(), ['role.view']);
         
-        $permissions = Permission::all();
+        $perPage = config('settings.default_pagination') ?? 10;
+        $search = request()->input('search') !== '' ? request()->input('search') : null;
+        
+        $roles = $this->rolesService->getPaginatedRolesWithUserCount($search, 10);
+        $permissions = $this->permissionService->getAllPermissionModels();
 
         return Inertia::render('roles/Index', [
             'roles' => $roles,
@@ -44,15 +54,12 @@ class RoleController extends Controller
      */
     public function store(Request $request)
     {
+        $this->checkAuthorization(auth()->user(), ['role.create']);
         $request->validate([
             'name' => 'required|string|max:255|unique:roles,name',
         ]);
     
-        $role = Role::create([
-            'name' => $request->input('name'),
-            'guard_name' => 'web', // or 'api' depending on your app
-        ]);
-        $role->syncPermissions($request->permissions);
+        $role = $this->rolesService->createRole($request->input('name'), $request->permissions);
     
         return redirect()->back()->with('status', 'Role created successfully.');
     }
@@ -78,15 +85,13 @@ class RoleController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $this->checkAuthorization(auth()->user(), ['role.update']);
         $request->validate([
             'name' => 'required|string|max:255',
         ]);
-    
-        $role = Role::findOrFail($id);
-        $role->name = $request->input('name');
-        $role->save();
-        $role->syncPermissions($request->permissions);
-    
+        
+        $role = $this->rolesService->updateRole(Role::findOrFail($id), $request->input('name'), $request->permissions);
+       
         return redirect()->back()->with('status', 'Role updated successfully.');
     }
 
@@ -95,9 +100,10 @@ class RoleController extends Controller
      */
     public function destroy(string $id)
     {
-        $role = Role::findOrFail($id);
-        $role->delete();
-    
+        $this->checkAuthorization(auth()->user(), ['role.delete']);
+        
+        $role = $this->rolesService->deleteRole(Role::findOrFail($id));
+        
         return redirect()->back()->with('status', 'Role deleted successfully.');
     }
 }

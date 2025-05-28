@@ -11,18 +11,21 @@ use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
+use App\Services\UserService;
 
 class UserController extends Controller
 {
+    public function __construct(private readonly UserService $userService,)
+    {
+        
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        if (!auth()->user()->hasAnyRole(['super-admin', 'admin'])) {
-            return back(403)->withErrors(['list' => 'Unauthorized access']);
-        }
-    
+        $this->checkAuthorization(auth()->user(), ['user.view']);
         $search = $request->get('search');
         $roleId = $request->input('role');
     
@@ -67,6 +70,7 @@ class UserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $this->checkAuthorization(auth()->user(), ['user.create']);
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
@@ -123,6 +127,7 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id): RedirectResponse
     {
+        $this->checkAuthorization(auth()->user(), ['user.update']);
         $user = User::findOrFail($id);
         
         $request->validate([
@@ -147,13 +152,13 @@ class UserController extends Controller
 
         // Fetch roles by IDs
         $roles = Role::whereIn('id', $roleIds)->where('guard_name', 'web')->get();
-        if ($user->id === auth()->id() && !$user->hasRole('super-admin')) {
-            return back(303)->withErrors(['update' => 'You cannot change your own role.']);
+        if ($user->id === auth()->id() && !$user->hasRole('Superadmin')) {
+            return back()->withErrors(['update' => 'You cannot change your own role.']);
         }
 
         foreach ($roles as $role) {
-            if (in_array($role->name, ['admin', 'super-admin']) && !auth()->user()->hasRole('super-admin')) {
-                return back(303)->withErrors(['update' => 'Only superadmin can assign the admin or super-admin role.']);
+            if (in_array($role->name, ['Admin', 'Superadmin']) && !auth()->user()->hasRole('super-admin')) {
+                return back()->withErrors(['update' => 'Only superadmin can assign the admin or super-admin role.']);
             }
         }
 
@@ -170,6 +175,7 @@ class UserController extends Controller
      */
     public function destroy(string $id)
     {
+        $this->checkAuthorization(auth()->user(), ['user.delete']);
         $user = User::findOrFail($id);
         if ($user->id == auth()->id()) {
             return back(303)->withErrors(['delete' => 'You cannot delete your own account.']);

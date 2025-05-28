@@ -21,10 +21,10 @@ class SettingsSeeder extends Seeder
             ['option_name' => 'app_name', 'option_value' => 'Laravel Dashboard'],
 
             // Site logo and icons.
-            ['option_name' => 'site_logo_lite', 'option_value' => '/images/logo/logo-lite.png'],
-            ['option_name' => 'site_logo_dark', 'option_value' => '/images/logo/logo-dark.png'],
-            ['option_name' => 'site_icon', 'option_value' => '/images/icons/site_icon.png'],
-            ['option_name' => 'site_favicon', 'option_value' => '/images/icons/site_favicon.png'],
+            ['option_name' => 'site_logo_lite', 'option_value' => '/logo.svg'],
+            ['option_name' => 'site_logo_dark', 'option_value' => '/logo.svg'],
+            ['option_name' => 'site_icon', 'option_value' => '/favicon.ico'],
+            ['option_name' => 'site_favicon', 'option_value' => '/favicon.svg'],
         ]);
     }
 }
