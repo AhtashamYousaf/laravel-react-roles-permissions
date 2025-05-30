@@ -60,7 +60,7 @@ class HandleInertiaRequests extends Middleware
                 'app_name' => $settings['app_name'] ?? config('settings.app_name'),
                 'site_logo_lite' => $settings['site_logo_lite'] ?? config('settings.site_logo_lite'),
                 'site_logo_dark' => $settings['site_logo_dark'] ?? config('settings.site_logo_dark'),
-                'site_icon' => $settings['site_icon'] ?? config('settings.name'),
+                'site_icon' => $settings['site_icon'] ?? config('settings.site_icon'),
                 'site_favicon' => $settings['site_favicon'] ?? config('settings.site_favicon'),
             ],
             'ziggy' => fn (): array => [

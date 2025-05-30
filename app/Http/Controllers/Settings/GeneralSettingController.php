@@ -32,8 +32,13 @@ class GeneralSettingController extends Controller
                 deleteImageFromPublic((string) config($fieldName));
                 $fileUrl = storeImageAndGetUrl($request, $fieldName, $uploadPath);
                 $this->settingService->addSetting($fieldName, $fileUrl);
-            } else {
-                $this->settingService->addSetting($fieldName, $fieldValue);
+            } elseif (!is_null($fieldValue) && $fieldValue !== '') 
+            {
+                // Optional: check if value is actually different than current config
+                $existingValue = config($fieldName);
+                if ($fieldValue != $existingValue) {
+                    $this->settingService->addSetting($fieldName, $fieldValue);
+                }
             }
         }
 

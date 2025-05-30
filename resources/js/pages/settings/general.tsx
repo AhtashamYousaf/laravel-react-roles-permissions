@@ -18,7 +18,14 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'General settings', href: '/sett
 export default function General() {
     const { settings } = usePage<SharedData>().props;
 
-    const { data, setData, post, errors, processing, recentlySuccessful } = useForm<{
+    const [previews, setPreviews] = useState({
+        site_logo_lite: settings.site_logo_lite || '/logo.svg',
+        site_logo_dark: settings.site_logo_dark || '/logo.svg',
+        site_icon: settings.site_icon || '/favicon.ico',
+        site_favicon: settings.site_favicon || '/favicon.svg',
+    });
+
+    const { data, setData, setDefaults, errors, processing, recentlySuccessful, post } = useForm<{
         app_name: string;
         site_logo_lite: File | null;
         site_logo_dark: File | null;
@@ -32,32 +39,42 @@ export default function General() {
         site_favicon: null,
     });
 
-    const [previews, setPreviews] = useState({
-        site_logo_lite: settings.site_logo_lite || '/logo.svg',
-        site_logo_dark: settings.site_logo_dark || '/logo.svg',
-        site_icon: settings.site_icon || '/favicon.ico',
-        site_favicon: settings.site_favicon || '/favicon.svg',
-    });
-
     const handleImageChange = (key: keyof typeof previews, file: File | null) => {
         setData(key, file);
 
         if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                setPreviews((prev) => ({ ...prev, [key]: e.target?.result as string }));
+                setPreviews((prev) => ({
+                    ...prev,
+                    [key]: e.target?.result as string,
+                }));
             };
             reader.readAsDataURL(file);
+        } else {
+            // If file removed, reset preview to original
+            setPreviews((prev) => ({
+                ...prev,
+                [key]: settings[key] ?? '',
+            }));
         }
     };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+
         post(route('settings.general.update'), {
             preserveScroll: true,
             forceFormData: true,
             onSuccess: () => {
                 toast.success('Settings updated successfully');
+                setDefaults({
+                    app_name: data.app_name,
+                    site_logo_lite: null,
+                    site_logo_dark: null,
+                    site_icon: null,
+                    site_favicon: null,
+                });
             },
             onError: (Errors) => {
                 toast.error(Errors?.update || 'Failed to update settings');
@@ -97,8 +114,17 @@ export default function General() {
                         ).map(([key, label]) => (
                             <div key={key} className="grid gap-2">
                                 <Label htmlFor={key}>{label}</Label>
-                                <img src={previews[key]} alt={`${label} preview`} className="max-h-[80px] bg-gray-200 p-2 dark:bg-gray-800" />
-                                <Input id={key} type="file" accept="image/*" onChange={(e) => handleImageChange(key, e.target.files?.[0] ?? null)} />
+                                <img
+                                    src={previews[key]}
+                                    alt={`${label} preview`}
+                                    className="max-h-[80px] bg-gray-200 p-2 dark:bg-gray-800 rounded-md"
+                                />
+                                <Input
+                                    id={key}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleImageChange(key, e.target.files?.[0] ?? null)}
+                                />
                                 <InputError message={errors[key]} />
                             </div>
                         ))}
@@ -107,8 +133,15 @@ export default function General() {
                             <Button type="submit" disabled={processing}>
                                 Save Changes
                             </Button>
-
-                            <Transition show={recentlySuccessful} enter="transition-opacity duration-500" enterFrom="opacity-0" enterTo="opacity-100">
+                            <Transition
+                                show={recentlySuccessful}
+                                enter="transition-opacity duration-500"
+                                enterFrom="opacity-0"
+                                enterTo="opacity-100"
+                                leave="transition-opacity duration-500"
+                                leaveFrom="opacity-100"
+                                leaveTo="opacity-0"
+                            >
                                 <p className="text-sm text-neutral-600">Saved.</p>
                             </Transition>
                         </div>
