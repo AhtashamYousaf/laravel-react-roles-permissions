@@ -13,6 +13,7 @@ type User = {
   email: string;
   email_verified_at: string | null;
   roles: Role[];
+  permissions: { id: number; name: string }[];
   created_at: Date;
 };
 interface Props {

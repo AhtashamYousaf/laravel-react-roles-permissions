@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Hash;
@@ -29,7 +30,7 @@ class UserController extends Controller
         $search = $request->get('search');
         $roleId = $request->input('role');
     
-        $users = User::with('roles')
+        $users = User::with(['roles', 'permissions'])
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
             })
@@ -49,6 +50,7 @@ class UserController extends Controller
         return Inertia::render('users/index', [
             'users' => $users,
             'roles' => Role::all(),
+            'permissions' => Permission::all(),
             'mustVerifyEmail' => false,
             'status' => session('status'),
             'search' => $search,
@@ -76,7 +78,9 @@ class UserController extends Controller
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', Rules\Password::defaults()],
             'roleIds' => 'required|array',
-            'roleIds.*' => 'integer|exists:roles,id'
+            'roleIds.*' => 'integer|exists:roles,id',
+            'permissionIds' => 'nullable|array',
+            'permissionIds.*' => 'integer|exists:permissions,id',
         ]);
 
         $user = User::create([
@@ -102,6 +106,11 @@ class UserController extends Controller
         }
         // Sync roles
         $user->syncRoles($roles->pluck('name')->toArray());
+
+         // ✅ Sync direct permissions (optional in addition to role-based permissions)
+        $permissionIds = $request->input('permissionIds', []);
+        $permissions = Permission::whereIn('id', $permissionIds)->where('guard_name', 'web')->get();
+        $user->syncPermissions($permissions);
 
         return to_route('admin.users.index')->with('success', 'User created!');
     }
@@ -135,7 +144,9 @@ class UserController extends Controller
         'email' => 'required|string|lowercase|email|max:255|unique:users,email,' . $id,
         'password' => ['nullable', Rules\Password::defaults()],
         'roleIds' => 'required|array',
-        'roleIds.*' => 'integer|exists:roles,id'
+        'roleIds.*' => 'integer|exists:roles,id',
+        'permissionIds' => 'nullable|array',
+        'permissionIds.*' => 'integer|exists:permissions,id',
         ]);
         
         $user->fill([
@@ -157,14 +168,19 @@ class UserController extends Controller
         }
 
         foreach ($roles as $role) {
-            if (in_array($role->name, ['Admin', 'Superadmin']) && !auth()->user()->hasRole('super-admin')) {
-                return back()->withErrors(['update' => 'Only superadmin can assign the admin or super-admin role.']);
+            if (in_array($role->name, ['Admin', 'Superadmin']) && !auth()->user()->hasRole('Superadmin')) {
+                return back()->withErrors(['update' => 'Only superadmin can assign the Admin or Superadmin role.']);
             }
         }
 
         $user->save();
         // Sync roles
         $user->syncRoles($roles->pluck('name')->toArray());
+
+        // Sync individual permissions (optional in addition to role-based permissions)
+        $permissionIds = $request->input('permissionIds', []);
+        $permissions = Permission::whereIn('id', $permissionIds)->where('guard_name', 'web')->get();
+        $user->syncPermissions($permissions);
 
        return to_route('admin.users.index')->with('success', 'User updated successfully!');
     }

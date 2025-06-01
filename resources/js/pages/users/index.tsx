@@ -19,12 +19,18 @@ type Role = {
     name: string;
 };
 
+type Permission = {
+    id: number;
+    name: string;
+};
+
 type User = {
     id: number;
     name: string;
     email: string;
     email_verified_at: string | null;
     roles: Role[];
+    permissions: Permission[];
     created_at: Date;
 };
 
@@ -41,6 +47,7 @@ type Props = {
         }[];
     };
     roles: Role[];
+    permissions: { id: number; name: string }[];
     mustVerifyEmail: boolean;
     status?: string;
     search?: string;
@@ -54,7 +61,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 type DialogType = 'create' | 'edit' | 'delete' | null;
 
-export default function Index({ users, roles, search: initialSearch, role: initialRole }: Props) {
+export default function Index({ users, roles, permissions,  search: initialSearch, role: initialRole }: Props) {
     const [search, setSearch] = useState(initialSearch ?? '');
     const [openDialog, setOpenDialog] = useState<DialogType>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -64,6 +71,7 @@ export default function Index({ users, roles, search: initialSearch, role: initi
         email: '',
         password: '',
         roleIds: [] as number[],
+        permissionIds: [] as number[],
     };
 
     const {
@@ -98,6 +106,7 @@ export default function Index({ users, roles, search: initialSearch, role: initi
                       name: user.name,
                       email: user.email,
                       roleIds: user.roles.map(role => role.id),
+                      permissionIds: user.permissions?.map(permission => permission.id) || [],
                   }
                 : defaultFormData,
         );
@@ -186,6 +195,7 @@ export default function Index({ users, roles, search: initialSearch, role: initi
                                             <UserForm
                                                 data={data}
                                                 roles={roles}
+                                                permissions={permissions}
                                                 errors={errors}
                                                 processing={processing}
                                                 submitLabel={isCreating ? 'Create User' : 'Save Changes'}
