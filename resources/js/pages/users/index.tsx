@@ -61,7 +61,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 type DialogType = 'create' | 'edit' | 'delete' | null;
 
-export default function Index({ users, roles, permissions,  search: initialSearch, role: initialRole }: Props) {
+export default function Index({ users, roles, permissions, search: initialSearch, role: initialRole }: Props) {
     const [search, setSearch] = useState(initialSearch ?? '');
     const [openDialog, setOpenDialog] = useState<DialogType>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -74,25 +74,25 @@ export default function Index({ users, roles, permissions,  search: initialSearc
         permissionIds: [] as number[],
     };
 
-    const {
-        data,
-        setData,
-        get,
-        put,
-        post,
-        delete: destroy,
-        processing,
-        errors,
-        reset,
-    } = useForm({...defaultFormData});
+    const { data, setData, get, put, post, delete: destroy, processing, errors, reset } = useForm({ ...defaultFormData });
 
     const isCreating = openDialog === 'create';
     const isEditing = openDialog === 'edit';
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        if (search.trim() !== initialSearch?.trim()) {
-            get(route('admin.users.index', { search: search.trim(), role: roleId || undefined }));
+
+        const trimmedSearch = search.trim();
+        const trimmedInitialSearch = initialSearch?.trim() || '';
+        const initialRoleValue = initialRole || '';
+
+        if (trimmedSearch !== trimmedInitialSearch || roleId !== initialRoleValue) {
+            get(
+                route('admin.users.index', {
+                    search: trimmedSearch || undefined,
+                    role: roleId ? roleId : undefined,
+                }),
+            );
         }
     };
 
@@ -105,8 +105,8 @@ export default function Index({ users, roles, permissions,  search: initialSearc
                       ...defaultFormData,
                       name: user.name,
                       email: user.email,
-                      roleIds: user.roles.map(role => role.id),
-                      permissionIds: user.permissions?.map(permission => permission.id) || [],
+                      roleIds: user.roles.map((role) => role.id),
+                      permissionIds: user.permissions?.map((permission) => permission.id) || [],
                   }
                 : defaultFormData,
         );
