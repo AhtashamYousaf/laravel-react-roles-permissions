@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { router } from '@inertiajs/react';
 import { Pencil, Trash2 } from 'lucide-react';
 
@@ -21,6 +21,7 @@ interface Props {
     data: User[];
     current_page: number;
     last_page: number;
+    per_page: number;
     total: number;
     links: {
       url: string | null;
@@ -88,6 +89,13 @@ export default function UserTable({ users, onEdit, onDelete }: Props) {
                             </TableRow>
                         )}
                     </TableBody>
+                    <TableFooter>
+                        <TableRow>
+                            <TableCell colSpan={6} className="text-sm text-muted-foreground text-right py-3 pr-4">
+                                Showing {(users.current_page - 1) * users.per_page + 1} to {(users.current_page - 1) * users.per_page + users.data.length} of {users.total} users
+                            </TableCell>
+                        </TableRow>
+                    </TableFooter>
                 </Table>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-4">

@@ -39,6 +39,7 @@ type Props = {
         data: User[];
         current_page: number;
         last_page: number;
+        per_page: number;
         total: number;
         links: {
             url: string | null;

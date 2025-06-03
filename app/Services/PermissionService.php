@@ -95,4 +95,9 @@ class PermissionService
     {
         return Permission::whereIn('name', $permissionNames)->get()->all();
     }
+
+    public function getPermissionsByIds(array $roleIds, string $guard): Collection
+    {
+        return Permission::whereIn('id', $roleIds)->where('guard_name', $guard)->get();
+    }
 }

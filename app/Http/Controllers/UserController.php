@@ -3,20 +3,24 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
 use Inertia\Inertia;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Validation\Rules;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
 use App\Services\UserService;
+use App\Http\Requests\User\StoreUserRequest;
+use App\Http\Requests\User\UpdateUserRequest;
+use App\Services\RolesService;
+use App\Services\PermissionService;
+use App\Models\User;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly UserService $userService,)
+    public function __construct(
+        private readonly UserService $userService,
+        private readonly PermissionService $permissionService,
+        private readonly RolesService $roleService
+    )
     {
         
     }
@@ -28,13 +32,13 @@ class UserController extends Controller
     {
         $this->checkAuthorization(auth()->user(), ['user.view']);
 
-        $search = request()->input('search') !== '' ? request()->input('search') : null;
-        $roleId = request()->input('role') !== '' ? request()->input('role') : null;
+        $search = $request->input('search') ?? null;
+        $roleId = $request->input('role') ?? null;
 
         return Inertia::render('users/index', [
             'users' => $this->userService->getPaginatedUsers($search, $roleId),
-            'roles' => Role::all(),
-            'permissions' => Permission::all(),
+            'roles' => $this->roleService->getAllRoles(),
+            'permissions' => $this->permissionService->getAllPermissionModels(),
             'mustVerifyEmail' => false,
             'status' => session('status'),
             'search' => $search,
@@ -54,47 +58,24 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreUserRequest $request): RedirectResponse
     {
         $this->checkAuthorization(auth()->user(), ['user.create']);
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
-            'password' => ['required', Rules\Password::defaults()],
-            'roleIds' => 'required|array',
-            'roleIds.*' => 'integer|exists:roles,id',
-            'permissionIds' => 'nullable|array',
-            'permissionIds.*' => 'integer|exists:permissions,id',
-        ]);
+        $validated = $request->validated();
+    
+       try {
+            $user = $this->userService->createUserWithRolesAndPermissions(
+                $validated['name'],
+                $validated['email'],
+                $validated['password'],
+                $validated['roleIds'] ?? [],
+                $validated['permissionIds'] ?? []
+            );
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        event(new Registered($user));
-
-        $roleIds = $request->input('roleIds');
-
-        // Fetch roles by IDs
-        $roles = Role::whereIn('id', $roleIds)->where('guard_name', 'web')->get();
-        if ($user->id === auth()->id() && !$user->hasRole('Superadmin')) {
-            return back(303)->withErrors(['update' => 'You cannot change your own role.']);
+            event(new Registered($user));
+        } catch (\Exception $e) {
+            return back(303)->withErrors(['create' => $e->getMessage()]);
         }
-
-        foreach ($roles as $role) {
-            if (in_array($role->name, ['Admin', 'Superadmin']) && !auth()->user()->hasRole('Superadmin')) {
-                return back(303)->withErrors(['update' => 'Only superadmin can assign the admin or Superadmin role.']);
-            }
-        }
-        // Sync roles
-        $user->syncRoles($roles->pluck('name')->toArray());
-
-         // ✅ Sync direct permissions (optional in addition to role-based permissions)
-        $permissionIds = $request->input('permissionIds', []);
-        $permissions = Permission::whereIn('id', $permissionIds)->where('guard_name', 'web')->get();
-        $user->syncPermissions($permissions);
 
         return to_route('admin.users.index')->with('success', 'User created!');
     }
@@ -118,53 +99,23 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id): RedirectResponse
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $this->checkAuthorization(auth()->user(), ['user.update']);
-        $user = User::findOrFail($id);
+        $validated = $request->validated();
         
-        $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|string|lowercase|email|max:255|unique:users,email,' . $id,
-        'password' => ['nullable', Rules\Password::defaults()],
-        'roleIds' => 'required|array',
-        'roleIds.*' => 'integer|exists:roles,id',
-        'permissionIds' => 'nullable|array',
-        'permissionIds.*' => 'integer|exists:permissions,id',
-        ]);
-        
-        $user->fill([
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-        ]);
-
-        if (!empty($request->input('password'))) {
-            $user->password = Hash::make($request->input('password'));
+        try {
+            $this->userService->updateUserWithRolesAndPermissions(
+                $user,
+                name: $validated['name'],
+                email: $validated['email'],
+                password: $validated['password'] ?? null,
+                roleIds: $validated['roleIds'] ?? [],
+                permissionIds: $validated['permissionIds'] ?? []
+            );
+        } catch (\Exception $e) {
+            return back(303)->withErrors(['update' => $e->getMessage()]);
         }
-
-        
-        $roleIds = $request->input('roleIds');
-
-        // Fetch roles by IDs
-        $roles = Role::whereIn('id', $roleIds)->where('guard_name', 'web')->get();
-        if ($user->id === auth()->id() && !$user->hasRole('Superadmin')) {
-            return back()->withErrors(['update' => 'You cannot change your own role.']);
-        }
-
-        foreach ($roles as $role) {
-            if (in_array($role->name, ['Admin', 'Superadmin']) && !auth()->user()->hasRole('Superadmin')) {
-                return back()->withErrors(['update' => 'Only superadmin can assign the Admin or Superadmin role.']);
-            }
-        }
-
-        $user->save();
-        // Sync roles
-        $user->syncRoles($roles->pluck('name')->toArray());
-
-        // Sync individual permissions (optional in addition to role-based permissions)
-        $permissionIds = $request->input('permissionIds', []);
-        $permissions = Permission::whereIn('id', $permissionIds)->where('guard_name', 'web')->get();
-        $user->syncPermissions($permissions);
 
        return to_route('admin.users.index')->with('success', 'User updated successfully!');
     }
@@ -173,22 +124,15 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(User $user): RedirectResponse
     {
         $this->checkAuthorization(auth()->user(), ['user.delete']);
-        $user = User::findOrFail($id);
-        if ($user->id == auth()->id()) {
-            return back(303)->withErrors(['delete' => 'You cannot delete your own account.']);
-        }
-        if ($user->hasRole('Superadmin')) {
-            return back(303)->withErrors(['delete' => 'Cannot delete this user.']);
-        }
 
-        $user->syncRoles(); 
-        $user->syncPermissions();    
-        
-        $user->delete();
-        
+        try {
+            $this->userService->deleteUser($user);
+        } catch (\Exception $e) {
+            return back(303)->withErrors(['delete' => $e->getMessage()]);
+        }
 
         return redirect()->back()->with('status', 'User deleted successfully.');
     }
