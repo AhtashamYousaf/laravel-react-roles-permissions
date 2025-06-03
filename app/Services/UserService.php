@@ -34,4 +34,29 @@ class UserService
     {
         return User::findOrFail($id);
     }
+
+    public function getPaginatedUsers(string $search = null, string $roleId = null, int $perPage = 10): LengthAwarePaginator
+    {
+        $query = User::query()->with(['roles','permissions']);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                ->orWhere('email', 'like', '%' . $search . '%');
+            });
+        }
+        $query->when(auth()->user()->hasRole('Admin'), function ($query) {
+            $query->whereDoesntHave('roles', function ($q) {
+                $q->where('name', 'Superadmin');
+            });
+        });
+
+        $query->when($roleId && $roleId !== 'all', function ($query) use ($roleId) {
+            $query->whereHas('roles', function ($q) use ($roleId) {
+                $q->where('id', $roleId);
+            });
+        });
+
+        return $query->paginate($perPage)->withQueryString();
+    }
 }

@@ -13,6 +13,7 @@ type User = {
   email: string;
   email_verified_at: string | null;
   roles: Role[];
+  permissions: { id: number; name: string }[];
   created_at: Date;
 };
 interface Props {
@@ -51,7 +52,9 @@ export default function UserTable({ users, onEdit, onDelete }: Props) {
                             users.data.map((user: User, index: number) => (
                                 <TableRow key={user.id}>
                                     <TableCell className="font-medium">{index + 1 + (users.current_page - 1) * 10}</TableCell>
-                                    <TableCell>{user.name}</TableCell>
+                                    <TableCell>{user.name}
+                                        <span className="block text-xs text-muted-foreground">Specific Permissions: {user.permissions.length > 0 ? user.permissions.length : 0}</span>
+                                    </TableCell>
                                     <TableCell className="text-center">{user.email}</TableCell>
                                     <TableCell className="text-center">
                                         {user.roles
