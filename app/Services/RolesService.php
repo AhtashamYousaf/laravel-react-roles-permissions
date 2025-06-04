@@ -64,6 +64,11 @@ class RolesService
         return Role::findById($id);
     }
 
+    public function getRolesByIds(array $roleIds, string $guard): Collection
+    {
+        return Role::whereIn('id', $roleIds)->where('guard_name', $guard)->get();
+    }
+
     public function updateRole(Role $role, string $name, array $permissions = []): Role
     {
         $role->name = $name;

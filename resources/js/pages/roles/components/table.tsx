@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableFooter, TableRow } from '@/components/ui/table';
 import { router } from '@inertiajs/react';
 import { Pencil, Trash2, Eye } from 'lucide-react';
 import CommonFunctions from '@/pages/helpers/common';
@@ -18,6 +18,7 @@ interface Props {
     data: Role[];
     current_page: number;
     last_page: number;
+    per_page: number;
     total: number;
     links: {
       url: string | null;
@@ -96,6 +97,13 @@ export default function RoleTable({ roles, onView, onEdit, onDelete }: Props) {
                             </TableRow>
                         )}
                     </TableBody>
+                    <TableFooter>
+                        <TableRow>
+                            <TableCell colSpan={6} className="text-sm text-muted-foreground text-right py-3 pr-4">
+                                Showing {(roles.current_page - 1) * roles.per_page + 1} to {(roles.current_page - 1) * roles.per_page + roles.data.length} of {roles.total} roles
+                            </TableCell>
+                        </TableRow>
+                    </TableFooter>
                 </Table>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
