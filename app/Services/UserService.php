@@ -98,13 +98,14 @@ class UserService
     }
 
     public function updateUserWithRolesAndPermissions(
-    User $user,
-    string $name,
-    string $email,
-    ?string $password,
-    array $roleIds = [],
-    array $permissionIds = []
-    ): User {
+        User $user,
+        string $name,
+        string $email,
+        ?string $password,
+        array $roleIds = [],
+        array $permissionIds = []
+        ): User 
+    {
 
         // Business rule: Can't change your own role unless superadmin
         if ($user->id === auth()->id() && !$user->hasRole('Superadmin')) {
@@ -137,7 +138,7 @@ class UserService
     }
 
 
-     public function deleteUser(User $user): bool
+    public function deleteUser(User $user): bool
     {   
         if ($user->id == auth()->id()) {
             throw new \Exception('You cannot delete your own account.');
