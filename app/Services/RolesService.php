@@ -119,6 +119,11 @@ class RolesService
             $query->where('name', 'like', '%' . $search . '%');
         }
 
+        // Exclude Admin and Superadmin unless the current user is Superadmin
+        if (!auth()->user()->hasRole('Superadmin')) {
+            $query->whereNotIn('name', ['Admin', 'Superadmin']);
+        }
+
         $roles = $query->paginate($perPage);
 
         // Add user count to each role
