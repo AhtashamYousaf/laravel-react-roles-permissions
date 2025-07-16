@@ -16,8 +16,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 type ChartData = {
   date: string
-  desktop: number
-  mobile: number
+  signups: number
 }
 interface Props {
     users: User[];

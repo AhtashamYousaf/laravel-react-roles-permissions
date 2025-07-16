@@ -28,26 +28,18 @@ import {
 } from "@/components/ui/toggle-group"
 
 const chartConfig = {
-  visitors: {
-    label: "Visitors",
-  },
-  desktop: {
-    label: "Desktop",
-    color: "#10b981",
-  },
-  mobile: {
-    label: "Mobile",
+  signups: {
+    label: "Signups",
     color: "#3b82f6",
   },
 } satisfies ChartConfig
 
 type ChartData = {
   date: string
-  desktop: number
-  mobile: number
+  signups: number
 }
 
-export function ChartAreaInteractive( { chartData }: { chartData: ChartData[] }) {
+export function ChartAreaInteractive({ chartData }: { chartData: ChartData[] }) {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("30d")
 
@@ -57,8 +49,7 @@ export function ChartAreaInteractive( { chartData }: { chartData: ChartData[] })
     }
   }, [isMobile])
 
-  const filteredData = chartData.filter((item) => {
-    const date = new Date(item.date)
+  const filteredData = React.useMemo(() => {
     const referenceDate = new Date()
     let daysToSubtract = 90
     if (timeRange === "30d") {
@@ -68,24 +59,24 @@ export function ChartAreaInteractive( { chartData }: { chartData: ChartData[] })
     }
     const startDate = new Date(referenceDate)
     startDate.setDate(startDate.getDate() - daysToSubtract)
-    return date >= startDate
-  })
+    return chartData.filter((item) => new Date(item.date) >= startDate)
+  }, [chartData, timeRange])
 
   return (
     <Card className="@container/card">
       <CardHeader className="relative">
-        <CardTitle>Total Visitors</CardTitle>
+        <CardTitle>Total Signups</CardTitle>
         <CardDescription>
           <span className="@[540px]/card:block hidden">
-            Total for the last 3 months
+            Total new users over selected period
           </span>
-          <span className="@[540px]/card:hidden">Last 3 months</span>
+          <span className="@[540px]/card:hidden">New users</span>
         </CardDescription>
         <div className="absolute right-4 top-4">
           <ToggleGroup
             type="single"
             value={timeRange}
-            onValueChange={setTimeRange}
+            onValueChange={(value) => value && setTimeRange(value)}
             variant="outline"
             className="@[767px]/card:flex hidden"
           >
@@ -102,9 +93,9 @@ export function ChartAreaInteractive( { chartData }: { chartData: ChartData[] })
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger
               className="@[767px]/card:hidden flex w-40"
-              aria-label="Select a value"
+              aria-label="Select time range"
             >
-              <SelectValue placeholder="Last 3 months" />
+              <SelectValue placeholder="Select range" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="90d" className="rounded-lg">
@@ -127,27 +118,15 @@ export function ChartAreaInteractive( { chartData }: { chartData: ChartData[] })
         >
           <AreaChart data={filteredData}>
             <defs>
-              <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="fillSignups" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="var(--color-desktop)"
-                  stopOpacity={1.0}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--color-desktop)"
-                  stopOpacity={0.1}
-                />
-              </linearGradient>
-              <linearGradient id="fillMobile" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="5%"
-                  stopColor="var(--color-mobile)"
+                  stopColor="var(--color-signups)"
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="95%"
-                  stopColor="var(--color-mobile)"
+                  stopColor="var(--color-signups)"
                   stopOpacity={0.1}
                 />
               </linearGradient>
@@ -171,29 +150,21 @@ export function ChartAreaInteractive( { chartData }: { chartData: ChartData[] })
               cursor={false}
               content={
                 <ChartTooltipContent
-                  labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString("en-US", {
+                  labelFormatter={(value) =>
+                    new Date(value).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                     })
-                  }}
+                  }
                   indicator="dot"
                 />
               }
             />
             <Area
-              dataKey="mobile"
+              dataKey="signups"
               type="natural"
-              fill="url(#fillMobile)"
-              stroke="var(--color-mobile)"
-              stackId="a"
-            />
-            <Area
-              dataKey="desktop"
-              type="natural"
-              fill="url(#fillDesktop)"
-              stroke="var(--color-desktop)"
-              stackId="a"
+              fill="url(#fillSignups)"
+              stroke="var(--color-signups)"
             />
           </AreaChart>
         </ChartContainer>

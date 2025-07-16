@@ -37,25 +37,32 @@ class RolePermissionSeeder extends Seeder
         $this->command->info('Creating predefined roles...');
         $roles = $this->rolesService->createPredefinedRoles();
 
-        // Assign superadmin role to superadmin user if exists
-        $user = User::where('name', 'Super Admin')->first();
-        if ($user) {
-            $this->command->info('Assigning Superadmin role to superadmin user...');
-            $user->assignRole($roles['superadmin']);
+        // Assign Superadmin role to user named "Super Admin"
+        $superAdminUser = User::where('name', 'Super Admin')->first();
+        if ($superAdminUser) {
+            $this->command->info('Assigning Superadmin role to "Super Admin" user...');
+            $superAdminUser->assignRole($roles['superadmin']);
         }
 
-        // Assign random roles to other users
-        $this->command->info('Assigning random roles to other users...');
-        $availableRoles = ['Admin', 'User']; // Exclude Superadmin from random assignment
-        $users = User::all();
-        
-        foreach ($users as $user) {
-            if (!$user->hasRole('Superadmin')) {
-                // Get a random role from the available roles
-                $randomRole = $availableRoles[array_rand($availableRoles)];
-                $user->assignRole($randomRole);
-            }
+        // Assign Admin role to user named "Admin"
+        $adminUser = User::where('name', 'Admin')->first();
+        if ($adminUser) {
+            $this->command->info('Assigning Admin role to "Admin" user...');
+            $adminUser->assignRole($roles['admin']);
         }
+
+        // Assign User role to user named "User"
+        $basicUser = User::where('name', 'User')->first();
+        if ($basicUser) {
+            $this->command->info('Assigning User role to "User" user...');
+            $basicUser->assignRole($roles['user']);
+        }
+
+        // Optional: assign default 'User' role to everyone else who has no role
+        $this->command->info('Assigning User role to all other users without any role...');
+        User::doesntHave('roles')->each(function ($user) use ($roles) {
+            $user->assignRole($roles['user']);
+        });
 
         $this->command->info('Roles and Permissions created successfully!');
     }

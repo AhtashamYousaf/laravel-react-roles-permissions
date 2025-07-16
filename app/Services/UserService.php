@@ -8,6 +8,9 @@ use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Collection;
+use Carbon\Carbon;
+
 
 class UserService
 {
@@ -16,24 +19,9 @@ class UserService
     {
 
     }
-    public function getUsers(): LengthAwarePaginator
+    public function getUsers(): Collection
     {
-        $query = User::query();
-        $search = request()->input('search');
-
-        if ($search) {
-            $query->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%");
-        }
-
-        $role = request()->input('role');
-        if ($role) {
-            $query->whereHas('roles', function ($q) use ($role) {
-                $q->where('name', $role);
-            });
-        }
-
-        return $query->latest()->paginate(config('settings.default_pagination') ?? 10);
+        return User::all();
     }
 
     public function getUserById(int $id): ?User
@@ -152,4 +140,20 @@ class UserService
 
         return $user->delete();
     }
+
+    public function getSignupsGroupedByDate(int $days = 90, bool $excludeToday = false): Collection
+    {
+        $query = User::query()
+            ->where('created_at', '>=', Carbon::now()->subDays($days)->startOfDay());
+
+        if ($excludeToday) {
+            $query->whereDate('created_at', '<', Carbon::today());
+        }
+
+        return $query
+            ->groupByRaw('DATE(created_at)')
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->pluck('count', 'date');
+    }
+
 }
